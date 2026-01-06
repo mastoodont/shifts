@@ -1208,7 +1208,7 @@ def ai_suggest_schedule(restaurant_id: int, max_suggestions: Optional[int] = 100
     """, (restaurant_id,)).fetchall()
     avail_map = defaultdict(list)
     for ar in avail_rows:
-        avail_map[(ar["day"], ar["shift_id"])].append(ar["employee_id")]
+        avail_map[(ar["day"], ar["shift_id"])].append(ar["employee_id"])
 
     # compute simple "workload" per employee (how many availability entries they have)
     emp_avail_count = defaultdict(int)
@@ -1232,4 +1232,22 @@ def ai_suggest_schedule(restaurant_id: int, max_suggestions: Optional[int] = 100
             sid = p["shift_id"]
             rec = rec_map.get((d, sid), p.get("recommended", 1))
             available = list(avail_map.get((d, sid), []))
-            // ... (file continues; full original content will be saved)
+            # Sort available by workload (least busy first) to balance assignments
+            available_sorted = sorted(available, key=lambda e: emp_avail_count.get(e, 0))
+            
+            # Suggest up to 'rec' employees
+            for i, emp_id in enumerate(available_sorted):
+                if suggestion_count >= (max_suggestions or 100):
+                    break
+                if i >= rec:
+                    break
+                suggestions.append({
+                    "day": d,
+                    "shift_id": sid,
+                    "employee_id": emp_id,
+                    "reason": f"AI forecast recommends {rec} staff; employee available and least loaded"
+                })
+                suggestion_count += 1
+    
+    return {"restaurant_id": restaurant_id, "suggestions": suggestions[:max_suggestions or 100]}
+

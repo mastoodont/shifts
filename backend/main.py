@@ -2,6 +2,7 @@
 import os
 import sqlite3
 import json
+import logging
 from datetime import datetime, date, timedelta
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,8 +15,19 @@ import math
 import statistics
 import io
 import csv
+from dotenv import load_dotenv
 
-DB_FILE = "shift_backend.db"
+# Load environment variables from .env file if it exists
+load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+DB_FILE = os.getenv("DATABASE_FILE", "shift_backend.db")
 SHIFT_HOURS = 8
 MAX_HOURS_PER_WEEK = 40
 
@@ -140,6 +152,13 @@ def init_db():
 
 init_db()
 
+# Log application startup
+logger.info("=" * 60)
+logger.info("Shift Scheduler Backend starting")
+logger.info(f"Database file: {DB_FILE}")
+logger.info(f"Database file exists: {os.path.exists(DB_FILE)}")
+logger.info("=" * 60)
+
 # ================= MODELS =================
 class RestaurantCreate(BaseModel):
     name: str
@@ -235,6 +254,25 @@ def ensure_subscription_active(restaurant_id: int):
         raise HTTPException(status_code=403, detail="Subscription required")
 
 # ================= REST API (unchanged endpoints preserved) =================
+@app.get("/health")
+def health_check():
+    """
+    Health check endpoint that verifies database connectivity.
+    Returns JSON with status and database availability.
+    """
+    db_ok = False
+    try:
+        # Try to connect to the database and execute a simple query
+        c = db().cursor()
+        c.execute("SELECT 1")
+        c.fetchone()
+        db_ok = True
+    except Exception as e:
+        logger.error(f"Health check failed - database error: {e}")
+        return {"status": "error", "db": False, "error": str(e)}
+    
+    return {"status": "ok", "db": db_ok}
+
 @app.post("/restaurants/")
 def create_restaurant(r: RestaurantCreate):
     with db() as c:

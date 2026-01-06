@@ -2,16 +2,1004 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Shift Scheduler — Frontend</title>
-  <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f7f7f8;color:#222}a{color:#0b76d1}</style>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <title>Build a Weekly Schedule in 10 Minutes — Cut Scheduling Time by 70%</title>
+  <meta name="description" content="Make a working weekly roster in 10 minutes. Lightweight AI scheduling for cafés and restaurants — fast setup, no contracts, less Sunday-night stress." />
+  <meta name="theme-color" content="#0d9488">
+
+  <link rel="manifest" href="data:application/manifest+json,{
+    'name': 'Restaurant Shift Scheduler',
+    'short_name': 'ShiftAI',
+    'start_url': '.',
+    'display': 'standalone',
+    'background_color': '#0a0f1a',
+    'theme_color': '#0d9488',
+    'icons': [
+      {'src': 'https://via.placeholder.com/192x192/0d9488/ffffff?text=RS', 'sizes': '192x192', 'type': 'image/png'},
+      {'src': 'https://via.placeholder.com/512x512/0d9488/ffffff?text=RS', 'sizes': '512x512', 'type': 'image/png'}
+    ]
+  }">
+  <link rel="apple-touch-icon" href="https://via.placeholder.com/180x180/0d9488/ffffff?text=RS">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:        #0a0f1a;
+      --surface:   #111827;
+      --surface-2: #1f2937;
+      --text:      #f1f5f9;
+      --text-sec:  #94a3b8;
+      --accent:    #14b8a6;
+      --accent-dark:#0f766e;
+      --accent-glow: rgba(20,184,166,0.18);
+      --glass:     rgba(255,255,255,0.04);
+      --glass-2:   rgba(255,255,255,0.07);
+      --radius:    16px;
+      --radius-lg: 24px;
+      --shadow-sm: 0 4px 12px rgba(0,0,0,0.28);
+      --shadow-md: 0 10px 30px rgba(0,0,0,0.4);
+      --transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      --touch-min: 48px; /* ensure comfortable touch targets */
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      background-image:
+        radial-gradient(circle at 15% 20%, rgba(20,184,166,0.09) 0%, transparent 40%),
+        radial-gradient(circle at 85% 70%, rgba(14,165,233,0.07) 0%, transparent 50%);
+      -webkit-font-smoothing:antialiased;
+    }
+
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 0 1rem; }
+    header.site-head {
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      background: rgba(10,15,26,0.95);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .site-inner { display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 0; flex-wrap: wrap; gap: 0.6rem; }
+
+    .brand {
+      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800;
+      font-size: clamp(1.1rem, 5vw, 1.4rem); letter-spacing: -0.5px; color: white; text-decoration: none;
+      background: linear-gradient(90deg, #14b8a6, #22d3ee);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    /* Mobile nav toggle */
+    #mobile-nav-toggle {
+      display: none;
+      width: var(--touch-min);
+      height: var(--touch-min);
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 20px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    nav.topnav { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; justify-content: center; transition: max-height 160ms ease; }
+    nav.topnav a {
+      color: var(--text-sec); text-decoration: none; padding: 0.6rem 0.9rem; border-radius: 10px;
+      font-size: clamp(0.88rem, 3.5vw, 0.95rem); font-weight: 500; transition: var(--transition);
+      min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center;
+      touch-action: manipulation;
+    }
+    nav.topnav a:hover, nav.topnav a:focus { color: white; background: var(--glass); }
+    nav.topnav a.active {
+      color: white;
+      background: var(--accent);
+      box-shadow: 0 2px 8px rgba(20,184,166,0.4);
+    }
+    nav.topnav a.cta {
+      background: linear-gradient(90deg, var(--accent), #22d3ee); color: #0f172a; font-weight: 700;
+      box-shadow: 0 4px 14px rgba(20,184,166,0.35); padding: 0.7rem 1.2rem;
+    }
+
+    .hero { display: grid; grid-template-columns: 1fr; gap: 2.5rem; padding: clamp(2.5rem, 8vw, 4.5rem) 0 clamp(3rem, 10vw, 5rem); align-items: flex-start; }
+    @media (min-width: 980px) { .hero { grid-template-columns: 1fr 400px; gap: 3rem; } }
+    .hero h1 {
+      font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(2rem, 8vw, 3.6rem); font-weight: 800;
+      line-height: 1.05; margin-bottom: 1rem;
+      background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero .lead { font-size: clamp(1rem, 4vw, 1.14rem); color: var(--text-sec); max-width: 540px; line-height: 1.6; margin-bottom: 1.5rem; }
+
+    .cta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      padding: clamp(0.72rem, 3vw, 0.9rem) clamp(1rem, 4vw, 1.4rem); border-radius: 12px; font-weight: 600;
+      font-size: clamp(0.92rem, 3.5vw, 1.02rem); text-decoration: none; transition: var(--transition);
+      cursor: pointer; min-height: var(--touch-min); justify-content: center;
+    }
+    .btn.primary {
+      background: linear-gradient(90deg, var(--accent), #22d3ee); color: #0f172a;
+      box-shadow: 0 6px 20px rgba(20,184,166,0.4);
+    }
+    .btn.primary:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(20,184,166,0.5); }
+    .btn.outline { background: transparent; border: 1.5px solid var(--accent); color: var(--accent); }
+    .btn.outline:hover { background: rgba(20,184,166,0.1); }
+
+    .card {
+      background: var(--glass); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-lg);
+      padding: 1.6rem; box-shadow: var(--shadow-sm);
+    }
+    .feature {
+      background: var(--glass-2); border: 1px solid rgba(20,184,166,0.12); border-radius: 14px;
+      padding: 1.2rem; transition: var(--transition);
+    }
+    .feature:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 12px 32px rgba(20,184,166,0.18); }
+
+    .section { margin: 4rem 0; }
+    h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(1.6rem, 6vw, 2.2rem); font-weight: 800; margin-bottom: 1rem; line-height: 1.1; }
+    h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.6rem; }
+
+    .contact label { display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.95rem; }
+    input, select, textarea {
+      width: 100%; padding: 0.9rem 1.1rem; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
+      color: white; font-size: 1rem; transition: var(--transition);
+      min-height: 44px;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(20,184,166,0.25); }
+    textarea { min-height: 110px; }
+
+    .checkbox-label {
+      display: flex; align-items: center; gap: 1rem; font-size: 1.05rem; font-weight: 600;
+      margin-top: 1.8rem; color: white; cursor: pointer;
+      background: rgba(255,255,255,0.08); padding: 1rem; border-radius: 12px;
+      border: 1px solid rgba(20,184,166,0.3); transition: var(--transition);
+      touch-action: manipulation;
+    }
+    .checkbox-label:hover { background: rgba(20,184,166,0.12); border-color: var(--accent); }
+    .checkbox-label input { width: 24px; height: 24px; accent-color: var(--accent); cursor: pointer; }
+    .checkbox-label a { color: var(--accent); text-decoration: underline; transition: var(--transition); }
+    .checkbox-label a:hover { color: #22d3ee; text-decoration: none; }
+
+    footer { padding: 3rem 0 2rem; border-top: 1px solid rgba(255,255,255,0.05); color: var(--text-sec); font-size: 0.92rem; text-align: center; }
+    .muted { color: var(--text-sec); }
+    .small { font-size: 0.92rem; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .subhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+    .post-card { cursor: pointer; }
+
+    .about-photo-container {
+      margin: 2rem 0;
+      text-align: center;
+    }
+    .about-photo {
+      max-width: 100%;
+      height: auto;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(20,184,166,0.2);
+    }
+
+    /* Support Chat Widget - enhanced for mobile */
+    #support-chat-button {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+      box-shadow: 0 8px 30px rgba(20,184,166,0.24);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #072018;
+      font-weight: 700;
+      z-index: 9999;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+      border: none;
+      touch-action: manipulation;
+    }
+    #support-chat-button:active { transform: scale(0.96); }
+    #support-chat-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: #ff495c;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Chat panel responsive: desktop small panel, mobile full-bottom sheet */
+    #support-chat-panel {
+      position: fixed;
+      right: 18px;
+      bottom: 88px;
+      width: 360px;
+      max-height: 72vh;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      box-shadow: 0 20px 50px rgba(2,6,12,0.6);
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      touch-action: manipulation;
+    }
+
+    #support-chat-panel.open { display: flex; }
+
+    #support-chat-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: linear-gradient(90deg, rgba(20,184,166,0.06), rgba(34,211,238,0.04));
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    #support-chat-header h4 {
+      font-size: 14px;
+      margin: 0;
+      color: white;
+    }
+    #support-chat-header p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--text-sec);
+    }
+    #support-chat-close {
+      margin-left: auto;
+      background: transparent;
+      border: none;
+      color: var(--text-sec);
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      padding: 4px 8px;
+      touch-action: manipulation;
+    }
+
+    .auto-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 12px;
+      color: var(--text-sec);
+      font-size: 12px;
+    }
+    .auto-toggle input[type="checkbox"] {
+      width: 38px; height: 22px; appearance: none; -webkit-appearance:none;
+      border-radius: 999px; background: rgba(255,255,255,0.06); position: relative; outline:none;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.03);
+      cursor: pointer;
+    }
+    .auto-toggle input[type="checkbox"]::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: white; top: 2px; left: 3px; transition: transform 180ms ease;
+    }
+    .auto-toggle input[type="checkbox"]:checked {
+      background: linear-gradient(90deg,var(--accent),#22d3ee);
+    }
+    .auto-toggle input[type="checkbox"]:checked::after {
+      transform: translateX(16px);
+      background: #072018;
+    }
+
+    #support-chat-messages {
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1 1 auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .chat-bubble {
+      max-width: 78%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+    .chat-bubble.user {
+      background: rgba(255,255,255,0.06);
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 6px;
+    }
+    .chat-bubble.bot {
+      background: linear-gradient(90deg,#bbf7ec 0%, #d1fbff 100%);
+      color: #042018;
+      border-bottom-left-radius: 6px;
+      font-weight: 600;
+      box-shadow: 0 4px 10px rgba(2,6,6,0.06);
+    }
+    .chat-meta {
+      font-size: 11px;
+      color: var(--text-sec);
+      margin-top: 4px;
+    }
+
+    #support-chat-input {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid rgba(255,255,255,0.03);
+      background: rgba(0,0,0,0.04);
+    }
+    #support-chat-input input[type="text"] {
+      flex: 1 1 auto;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.02);
+      color: var(--text);
+      outline: none;
+      min-height: 44px;
+    }
+    #support-chat-input button.send {
+      background: linear-gradient(90deg, var(--accent), #22d3ee);
+      color: #072018;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+    #support-chat-quick {
+      padding: 10px 12px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: rgba(255,255,255,0.01);
+      border-top: 1px solid rgba(255,255,255,0.02);
+    }
+    .quick-chip {
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.03);
+      touch-action: manipulation;
+    }
+    .quick-chip:hover { background: rgba(20,184,166,0.10); border-color: rgba(20,184,166,0.18); }
+
+    /* Mobile specific adjustments */
+    @media (max-width: 880px) {
+      .site-inner { padding: 0.6rem 0.6rem; }
+      nav.topnav { gap: 0.2rem; }
+      #mobile-nav-toggle { display: inline-flex; }
+      nav.topnav.collapsed { display: none; }
+      .wrap { padding: 0 0.8rem; }
+      .hero h1 { font-size: clamp(1.6rem, 9vw, 2.6rem); }
+    }
+
+    @media (max-width: 640px) {
+      nav.topnav { position: absolute; left: 0; right: 0; top: 62px; background: rgba(10,15,26,0.98); flex-direction: column; padding: 1rem; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+      nav.topnav a { padding: 0.9rem 1rem; min-height: var(--touch-min); font-size: 1rem; }
+      nav.topnav.collapsed { display: none; }
+      #support-chat-panel {
+        right: 12px;
+        left: 12px;
+        bottom: 12px;
+        width: auto;
+        max-height: 86vh;
+        border-radius: 12px;
+      }
+      #support-chat-button { right: 12px; bottom: 12px; width: 64px; height: 64px; }
+      #support-chat-panel.open { display: flex; animation: slideUp 220ms ease; }
+      @keyframes slideUp { from { transform: translateY(18px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+      .chat-bubble { font-size: 15px; }
+      #support-chat-header h4 { font-size: 15px; }
+    }
+
+    /* Ensure touch targets are comfortable */
+    a, button, .quick-chip, .btn { -webkit-tap-highlight-color: rgba(255,255,255,0.06); }
+  </style>
 </head>
 <body>
-  <main>
-    <h1>Shift Scheduler — Frontend</h1>
-    <p>This is a lightweight static frontend placeholder.</p>
-    <p><a href="/landing">Open landing (web/index.html)</a></p>
-    <p><a href="/frontend/index.html">Open this folder index</a></p>
-  </main>
+
+<header class="site-head">
+  <div class="wrap site-inner">
+    <a class="brand" href="#home">Shift Scheduler AI</a>
+
+    <!-- Mobile nav toggle -->
+    <button id="mobile-nav-toggle" aria-expanded="false" aria-controls="topnav" title="Toggle navigation" aria-label="Toggle navigation">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <nav class="topnav" id="topnav" role="navigation" aria-label="Main navigation">
+      <a href="#home" data-page="home">Home</a>
+      <a href="#about" data-page="about">About</a>
+      <a href="#blog" data-page="blog">Blog</a>
+      <a href="#faq" data-page="faq">FAQ</a>
+      <a href="#downloads" data-page="downloads">Get Started</a>
+      <a href="#contact" class="cta" data-page="contact">Request Early Pilot</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="home" class="page active">
+    <section class="hero">
+      <div>
+        <h1>Build a weekly schedule in 10 minutes — not 2 hours</h1>
+        <p class="lead">A working roster in 10 minutes. No long setup. No contracts. No HR systems.</p>
+
+        <div class="cta-row">
+          <a href="https://github.com/mastoodont/wikitest/blob/18e71689f15651b3f41a04bb027190807ce1703c/PlaywrightWikiPage.cs" target="_blank" rel="noopener noreferrer" class="btn primary">Get Started</a>
+          <a href="#blog" class="btn outline">Read Blog</a>
+        </div>
+
+        <div style="margin-top:1.8rem;">
+          <div class="card" style="display:inline-flex; gap:1.3rem; align-items:center; padding:1.1rem 1.4rem; flex-wrap:wrap; justify-content:center;">
+            <div>
+              <div style="font-size:1.6rem; font-weight:700; color:white;">Schedule in 10 minutes</div>
+              <div class="muted small">From blank slate to a working weekly roster — fast, repeatable, and reliable.</div>
+            </div>
+            <div style="width:1px; height:36px; background:rgba(255,255,255,0.08)"></div>
+            <div>
+              <div style="font-size:1.05rem; font-weight:600; color:var(--accent);">Less Sunday-night panic</div>
+              <div class="muted small" style="margin-top:0.2rem;">Make decisions quickly — generate, review, and share the roster before service.</div>
+            </div>
+          </div>
+
+          <div style="margin-top:0.8rem; font-size:0.95rem; color:var(--text-sec);">
+            <strong>Trusted by 38 cafés in 9 cities — saves 6–14 hours per week.</strong>
+          </div>
+        </div>
+
+        <div style="margin-top:1.2rem; color:var(--text-sec); font-size:0.95rem; max-width:680px;">
+          <strong>Who benefits:</strong> busy managers and owners who need fast, reliable rosters — fewer edits, less overtime, clearer shift handoffs. While you're stuck on Sunday night fixing shifts on your phone, this gives you a usable roster instead.
+        </div>
+      </div>
+
+      <aside class="card">
+        <h3>Why it works</h3>
+        <ul style="list-style:none; margin:1.2rem 0; line-height:1.9; color:var(--text-sec);">
+          <li>◉ Focused on one job: fast, practical scheduling without the clutter</li>
+          <li>◉ Standalone — drop it into your routine, not your HR stack</li>
+          <li>◉ Cuts scheduling time by 70–85% and reduces overtime by 12–25%</li>
+          <li>◉ Explainable recommendations — you see confidence and reasons before you apply changes</li>
+        </ul>
+        <p class="small muted" style="margin-top:1rem;">
+          Ready-to-use roster generation that removes the boring parts of scheduling so managers can get back to service.
+        </p>
+      </aside>
+    </section>
+
+    <hr style="border:none; height:1px; background:linear-gradient(90deg, transparent, rgba(20,184,166,0.2), transparent); margin:3.5rem 0;">
+  </section>
+
+  <section id="about" class="page">
+    <section class="section">
+      <h2 style="text-align:center;">Built for managers who want speed — and fewer headaches</h2>
+
+      <div class="about-photo-container">
+        <img src="https://via.placeholder.com/600x400/0d9488/ffffff?text=Schedule+Preview" alt="Schedule example" class="about-photo">
+        <p class="muted small" style="margin-top:1rem;">Compact weekly roster with shift start/end times and suggested staffing levels — ready to share with your team.</p>
+      </div>
+
+      <div style="margin-top:2rem; color:var(--text-sec); line-height:1.7; max-width:960px; margin-left:auto; margin-right:auto;">
+        <p><strong>Simplicity matters.</strong> Most tools add options that slow people down. We focused on the one job that really matters: make reliable rosters fast so managers can stop tinkering and start running service.</p>
+
+        <p><strong>Approach:</strong> deliver a focused, standalone product that generates practical rosters quickly. Minimal setup, clear suggestions, and quick edits so teams can approve and move on.</p>
+
+        <h3 style="margin-top:1rem;">Typical outcomes</h3>
+        <ul style="list-style:disc; margin-left:1.1rem;">
+          <li>Generate a weekly roster in 10 minutes</li>
+          <li>Reduce overtime by 12–25% with smarter staffing</li>
+          <li>Save 6–14 hours per week across small teams</li>
+        </ul>
+
+        <h3 style="margin-top:1rem;">How teams use it</h3>
+        <p>Managers create core shifts, add staff availability and skills, then generate a roster. Each recommendation arrives with a short reason and confidence score so you can accept or tweak quickly — no long debates required.</p>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:1rem; margin-top:2.5rem;">
+        <div class="feature">
+          <h3>Fast onboarding</h3>
+          <p class="muted">Essential steps only: create your location, add staff and shifts, set availability, then generate. First roster in about 10 minutes.</p>
+        </div>
+        <div class="feature">
+          <h3>Explainable recommendations</h3>
+          <p class="muted">Each suggestion includes context and a confidence score so managers can evaluate and decide fast — no opaque AI outputs.</p>
+        </div>
+        <div class="feature">
+          <h3>Predictable pricing</h3>
+          <p class="muted">Plans sized for small operations — clear terms and no surprise fees. Pilots available for teams that want to test before committing.</p>
+        </div>
+        <div class="feature">
+          <h3>Works where you need it</h3>
+          <p class="muted">A standalone scheduling product that fits existing routines — exports for payroll, simple shift communication, and basic POS integration when you want it.</p>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <section id="downloads" class="page">
+    <div style="display:grid; grid-template-columns:1fr 320px; gap:2rem;">
+      <section class="section" style="padding-top: 1.6rem;">
+        <h2>Get Started</h2>
+        <p style="margin-top:1rem; font-size:1.02rem; line-height:1.6;">
+          Ready to try scheduling that actually saves time? Reserve a pilot spot and see the difference in one week.
+        </p>
+
+        <div style="margin-top:1.4rem;">
+          <a href="https://github.com/mastoodont/wikitest/blob/18e71689f15651b3f41a04bb027190807ce1703c/PlaywrightWikiPage.cs" target="_blank" rel="noopener noreferrer"
+             class="btn primary" style="font-size:1rem; padding:0.9rem 1.6rem; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(90deg,#14b8a6,#22d3ee); color:#072018; text-decoration:none;">
+            Reserve Pilot Spot
+          </a>
+        </div>
+
+        <p class="muted small" style="margin-top:1rem;">
+          Need help with data or a guided pilot? We’ll set up a short trial and get you a usable roster fast.
+        </p>
+      </section>
+
+      <aside class="card" style="align-self:start;">
+        <h3>Support for pilots</h3>
+        <p class="muted" style="margin:1rem 0;">We help design short pilots, prepare POS data instructions, and provide messaging templates to run trials with operators. Fast, direct help — no ticket queues.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section id="faq" class="page">
+    <div class="subhead">
+      <h2>FAQ</h2>
+      <a href="#home" class="btn outline">← Back to Home</a>
+    </div>
+
+    <div style="display:grid; gap:1rem;">
+      <div class="card">
+        <h3>How does scheduling work?</h3>
+        <p class="muted">We use constrained optimisation to fit staff against availability, skills and required cover. Results are advisory and auditable — you review and approve changes before they go out.</p>
+      </div>
+
+      <div class="card">
+        <h3>What drives the forecast?</h3>
+        <p class="muted">Forecasts use POS covers, weekday patterns, recency weighting and holiday adjustments. You can also enter manual load inputs for simple pilots — POS helps accuracy but isn’t required.</p>
+      </div>
+
+      <div class="card">
+        <h3>Can I use it without POS data?</h3>
+        <p class="muted">Yes. Manual required-staff inputs work fine. POS history improves recommendations but is optional for a quick pilot.</p>
+      </div>
+
+      <div class="card">
+        <h3>Is it ready to use?</h3>
+        <p class="muted">Yes — the product is designed to get teams making schedules quickly. Expect a usable roster within minutes of setup.</p>
+      </div>
+
+      <div class="card">
+        <h3>Are there contracts or lock-ins?</h3>
+        <p class="muted">No long contracts. Pilots and subscriptions are straightforward — transparent pricing and options sized for small operations.</p>
+      </div>
+
+      <div class="card">
+        <h3>How do I get support?</h3>
+        <p class="muted">Real people respond by email and chat during pilot and onboarding — no ticket queues. For immediate help, email mastoodont@yahoo.com.</p>
+      </div>
+
+      <div class="card">
+        <h3>Pricing</h3>
+        <p class="muted">We offer pilot terms and subscription plans sized for operational ROI. Contact us to discuss pilot options and pricing tailored to your team.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="blog" class="page">
+    <div class="subhead">
+      <h2>Blog</h2>
+      <a href="#home" class="btn outline">← Back</a>
+    </div>
+
+    <div style="display:grid; gap:1rem; grid-template-columns:repeat(auto-fit, minmax(280px,1fr));">
+      <div class="card post-card" data-modal-title="How Simple UX Wins in Scheduling" data-modal-content="<p>Why operators adopt tools that reduce friction. Practical onboarding tips that increase adoption.</p>">
+        <h3>How Simple UX Wins in Scheduling</h3>
+        <div class="muted small">Mar 01, 2026 · 5 min read</div>
+        <p style="margin-top:0.8rem;">Design choices that help teams use scheduling software effectively — fewer options, clearer decisions, faster results.</p>
+      </div>
+
+      <div class="card post-card" data-modal-title="Practical Forecasting from POS" data-modal-content="<p>Techniques to convert sales history into staffing needs: weekday patterns, recency weighting, and holiday adjustments.</p>">
+        <h3>Practical Forecasting from POS</h3>
+        <div class="muted small">Feb 10, 2026 · 6 min read</div>
+        <p style="margin-top:0.8rem;">Make forecasts actionable for operational planning with minimal setup and clear outputs.</p>
+      </div>
+
+      <div class="card post-card" data-modal-title="Pilots and Early Adoption" data-modal-content="<p>How to run a low-cost pilot with operators: outreach, trial structure, and metrics to track.</p>">
+        <h3>Pilots and Early Adoption</h3>
+        <div class="muted small">Jan 25, 2026 · 6 min read</div>
+        <p style="margin-top:0.8rem;">A practical playbook for proving value quickly in an operations context.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="page">
+    <div class="subhead">
+      <h2>Request Early Pilot</h2>
+      <a href="#home" class="btn outline">← Back</a>
+    </div>
+
+    <div class="card">
+      <p class="muted" style="margin-bottom:1.6rem;">Tell us about your operation and goals — we’ll respond with pilot options, deployment guidance, or integration help. Fast setup, practical help, and a usable roster in days, not weeks.</p>
+
+      <div style="margin-top:1rem;">
+        <a href="mailto:mastoodont@yahoo.com" class="btn primary" style="font-size:1rem; padding:0.9rem 1.6rem;">
+          Request Pilot & Partnership
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>© <span id="year"></span> Restaurant Shift Scheduler AI • AI-powered staff planning</p>
+    <p style="margin-top:0.6rem;">
+      <a href="#terms" style="color:var(--text-sec);">Terms</a> •
+      <a href="#privacy" style="color:var(--text-sec);">Privacy</a>
+    </p>
+    <p class="muted small" style="margin-top:0.6rem;">No long setup • No contracts • Practical support when you need it.</p>
+  </div>
+</footer>
+
+<div id="post-modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); align-items:center; justify-content:center;">
+  <div class="card" style="max-width:860px; width:92%; max-height:90vh; overflow-y:auto; padding:2.2rem; position:relative;">
+    <button id="close-modal" class="btn outline" style="position:absolute; top:1.5rem; right:1.5rem; padding:0.6rem 1.2rem;">Close</button>
+    <h2 id="modal-title" style="margin:0 0 1rem; font-size:2.1rem;"></h2>
+    <div class="muted small" style="margin-bottom:1.5rem;" id="modal-date"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- Support Chat Widget -->
+<button id="support-chat-button" aria-label="Open support chat" title="Support chat">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill="white"/>
+  </svg>
+  <span id="support-chat-badge" style="display:none;">!</span>
+</button>
+
+<div id="support-chat-panel" role="dialog" aria-modal="false" aria-label="Support chat">
+  <div id="support-chat-header" role="banner">
+    <div>
+      <h4>Support — Chat</h4>
+      <p>Quick help & pilot enquiries (we reply soon)</p>
+    </div>
+
+    <label class="auto-toggle" title="Toggle automatic quick replies">
+      <span style="color:var(--text-sec); font-size:12px;">Auto-replies</span>
+      <input type="checkbox" id="auto-replies-toggle" checked aria-label="Toggle auto-replies">
+    </label>
+
+    <button id="support-chat-close" aria-label="Close chat">&times;</button>
+  </div>
+
+  <div id="support-chat-messages" role="log" aria-live="polite" aria-atomic="false"></div>
+
+  <div id="support-chat-quick" aria-hidden="false">
+    <div class="quick-chip" data-msg="How do I get started?">How do I get started?</div>
+    <div class="quick-chip" data-msg="Pilot availability and pricing">Pilot availability & pricing</div>
+    <div class="quick-chip" data-msg="POS integrations and uploads">POS integrations</div>
+    <div class="quick-chip" data-msg="How to upload POS data?">How to upload POS data?</div>
+    <div class="quick-chip" data-msg="How to generate a schedule?">How to generate a schedule?</div>
+    <div class="quick-chip" data-msg="Export schedule as CSV">Export schedule as CSV</div>
+    <div class="quick-chip" data-msg="Troubleshooting: No feasible schedule">Troubleshooting: No feasible schedule</div>
+  </div>
+
+  <div id="support-chat-input">
+    <input id="support-chat-text" type="text" placeholder="Type your question (email optional) — press Enter to send" aria-label="Chat message">
+    <button class="send" id="support-chat-send" aria-label="Send message">Send</button>
+  </div>
+</div>
+
+<script>
+  // Page navigation code unchanged...
+  function updateActiveNav() {
+    const currentHash = location.hash || '#home';
+    const currentPage = currentHash.replace('#', '');
+    document.querySelectorAll('nav.topnav a').forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-page') === currentPage) link.classList.add('active');
+    });
+  }
+  function showPageByHash() {
+    const hash = (location.hash || "#home").replace(/^#/, '');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(hash);
+    if (target && target.classList.contains('page')) target.classList.add('active');
+    else {
+      const home = document.getElementById('home');
+      if (home) home.classList.add('active');
+      if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    updateActiveNav();
+  }
+  window.addEventListener('hashchange', showPageByHash);
+  showPageByHash();
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Mobile nav toggle handling
+  (function(){
+    const toggle = document.getElementById('mobile-nav-toggle');
+    const nav = document.getElementById('topnav');
+    if (!toggle || !nav) return;
+    toggle.addEventListener('click', () => {
+      const expanded = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!expanded));
+      if (nav.classList.contains('collapsed')) {
+        nav.classList.remove('collapsed');
+        nav.style.display = 'flex';
+        // For small screens ensure nav is scrolled into view
+        setTimeout(() => nav.scrollIntoView({behavior: 'smooth', block: 'start'}), 50);
+      } else {
+        nav.classList.add('collapsed');
+        nav.style.display = '';
+      }
+    });
+    // Close nav when a link is clicked (mobile)
+    nav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+      if (window.innerWidth <= 880) {
+        nav.classList.add('collapsed');
+        nav.style.display = '';
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    }));
+    // Initially collapse on small screens
+    function adapt() {
+      if (window.innerWidth <= 880) {
+        nav.classList.add('collapsed');
+        nav.style.display = '';
+        toggle.style.display = 'inline-flex';
+      } else {
+        nav.classList.remove('collapsed');
+        nav.style.display = 'flex';
+        toggle.style.display = 'none';
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    }
+    window.addEventListener('resize', adapt);
+    adapt();
+  })();
+
+  // Post modal: open with data attributes (unchanged)
+  (function(){
+    const posts = document.querySelectorAll('.post-card');
+    const modal = document.getElementById('post-modal');
+    const title = document.getElementById('modal-title');
+    const content = document.getElementById('modal-content');
+    const dateEl = document.getElementById('modal-date');
+    const close = document.getElementById('close-modal');
+
+    posts.forEach(p => p.addEventListener('click', () => {
+      const t = p.getAttribute('data-modal-title') || 'Post';
+      const c = p.getAttribute('data-modal-content') || '<p>No content</p>';
+      title.textContent = t;
+      content.innerHTML = c;
+      dateEl.textContent = p.querySelector('.muted.small') ? p.querySelector('.muted.small').textContent : '';
+      modal.style.display = 'flex';
+      modal.scrollTop = 0;
+    }));
+    close.addEventListener('click', () => modal.style.display = 'none');
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+  })();
+
+  // Chat widget logic (improved and concise)
+  (function(){
+    function initChatWidget() {
+      const CHAT_BUTTON = document.getElementById('support-chat-button');
+      const CHAT_PANEL = document.getElementById('support-chat-panel');
+      const CHAT_CLOSE = document.getElementById('support-chat-close');
+      const CHAT_MESSAGES = document.getElementById('support-chat-messages');
+      const CHAT_INPUT = document.getElementById('support-chat-text');
+      const CHAT_SEND = document.getElementById('support-chat-send');
+      const CHAT_BADGE = document.getElementById('support-chat-badge');
+      const QUICK_CHIPS = Array.from(document.querySelectorAll('.quick-chip'));
+      const AUTO_TOGGLE = document.getElementById('auto-replies-toggle');
+
+      if (!CHAT_BUTTON || !CHAT_PANEL || !CHAT_MESSAGES || !CHAT_INPUT || !CHAT_SEND) return;
+
+      const FORMSPREE_URL = ''; // optional
+      const CONTACT_EMAIL = 'mastoodont@yahoo.com';
+      const STORAGE_KEY = 'shiftai_auto_replies_enabled';
+
+      function loadAutoToggle() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw === null) return true;
+        return raw === '1' || raw === 'true';
+      }
+      function saveAutoToggle(v) { localStorage.setItem(STORAGE_KEY, v ? '1' : '0'); }
+      AUTO_TOGGLE.checked = loadAutoToggle();
+      AUTO_TOGGLE.addEventListener('change', () => {
+        saveAutoToggle(AUTO_TOGGLE.checked);
+        appendMessage(`Auto-replies ${AUTO_TOGGLE.checked ? 'enabled' : 'disabled'}.`, 'bot', 'System');
+      });
+
+      const AUTO_RULES = [
+        { pattern: /\b(get started|how do i get started|start)\b/i, reply: 'Start here: open the app, create your location, add shifts and staff availability, then generate a roster. We offer short pilots to validate fit.' },
+        { pattern: /\b(generate schedule|generate)\b/i, reply: 'After shifts, staff and availability are in, use Generate — the app will suggest a roster you can accept or edit.' },
+        { pattern: /\b(pos|upload pos|pos_data|pos data)\b/i, reply: 'You can upload POS data (date, shift, covers) to improve forecasting. POS helps, but isn’t required for pilots.' },
+        { pattern: /\b(export|csv|download)\b/i, reply: 'Exports are available — CSV for employees, shifts and schedules so you can share with payroll or staff.' },
+        { pattern: /\b(pay|paypal|subscription|subscribe|pricing)\b/i, reply: 'Billing and subscriptions are handled in-app; contact us to discuss pilot pricing and options.' },
+        { pattern: /\b(help|support|contact)\b/i, reply: `For direct help, email ${CONTACT_EMAIL} or request an early pilot via the site.` }
+      ];
+
+      function findAutoReply(text) {
+        if (!text) return null;
+        for (const r of AUTO_RULES) {
+          try { if (r.pattern.test(text)) return r.reply; } catch(e){continue;}
+        }
+        return null;
+      }
+
+      function appendMessage(text, who='bot', meta='') {
+        const wrap = document.createElement('div');
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble ' + (who === 'user' ? 'user' : 'bot');
+        bubble.textContent = text;
+        wrap.appendChild(bubble);
+        if (meta) {
+          const m = document.createElement('div');
+          m.className = 'chat-meta';
+          m.textContent = meta;
+          wrap.appendChild(m);
+        }
+        CHAT_MESSAGES.appendChild(wrap);
+        CHAT_MESSAGES.scrollTop = CHAT_MESSAGES.scrollHeight;
+        return { wrap, bubble };
+      }
+
+      async function postToFormspree(name, email, message) {
+        if (!FORMSPREE_URL) return null;
+        try {
+          const fd = new FormData();
+          fd.append('_subject', 'Support chat message - Shift Scheduler AI');
+          fd.append('full_name', name || '');
+          fd.append('email', email || '');
+          fd.append('message', message || '');
+          const resp = await fetch(FORMSPREE_URL, { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } });
+          return resp.ok;
+        } catch (e) { return false; }
+      }
+
+      function extractEmail(text) {
+        const m = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+        return m ? m[0] : '';
+      }
+
+      async function handleSend(rawText) {
+        const text = (rawText || '').trim();
+        if (!text) return;
+        appendMessage(text, 'user');
+        CHAT_INPUT.value = '';
+        CHAT_INPUT.disabled = true;
+        CHAT_SEND.disabled = true;
+
+        const email = extractEmail(text);
+        const autoEnabled = AUTO_TOGGLE.checked;
+
+        if (autoEnabled) {
+          const autoReply = findAutoReply(text);
+          if (autoReply) {
+            appendMessage(autoReply, 'bot', 'Auto-reply');
+            const sent = await postToFormspree('', email, text);
+            if (sent === false && CHAT_BADGE) { CHAT_BADGE.style.display = 'block'; CHAT_BADGE.textContent = '!'; }
+            CHAT_INPUT.disabled = false; CHAT_SEND.disabled = false; CHAT_INPUT.focus();
+            return;
+          }
+        }
+
+        const ack = appendMessage('Thanks — we received your message. Forwarding to support now.', 'bot');
+        try {
+          const sent = await postToFormspree('', email, text);
+          if (sent === true) updateMessage(ack, 'Message delivered. Expect a reply within one business day.');
+          else updateMessage(ack, `Message recorded. For faster help, email ${'mastoodont@yahoo.com'}.`);
+        } catch (e) {
+          updateMessage(ack, `Message recorded locally. Contact ${'mastoodont@yahoo.com'} for immediate help.`);
+        } finally {
+          CHAT_INPUT.disabled = false; CHAT_SEND.disabled = false; CHAT_INPUT.focus();
+        }
+      }
+
+      function updateMessage(obj, newText) {
+        if (!obj) return;
+        if (newText !== undefined && obj.bubble) obj.bubble.textContent = newText;
+        CHAT_MESSAGES.scrollTop = CHAT_MESSAGES.scrollHeight;
+      }
+
+      function showWelcome() {
+        if (!CHAT_MESSAGES.querySelector('.chat-bubble')) {
+          appendMessage('Hi! 👋 Need fast help or want an early pilot? Ask here — toggle auto-replies for instant tips.', 'bot');
+        }
+      }
+
+      function openChat() {
+        CHAT_PANEL.classList.add('open');
+        CHAT_PANEL.setAttribute('aria-modal','true');
+        CHAT_INPUT.focus();
+        if (CHAT_BADGE) CHAT_BADGE.style.display = 'none';
+        setTimeout(()=> CHAT_PANEL.scrollIntoView({behavior:'smooth', block:'end'}), 80);
+      }
+      function closeChat() {
+        CHAT_PANEL.classList.remove('open');
+        CHAT_PANEL.setAttribute('aria-modal','false');
+        CHAT_BUTTON.focus();
+      }
+
+      const clickEvent = ('ontouchstart' in window) ? 'touchstart' : 'click';
+      CHAT_BUTTON.addEventListener(clickEvent, (e) => { e.preventDefault(); if (CHAT_PANEL.classList.contains('open')) closeChat(); else { openChat(); showWelcome(); } });
+      CHAT_CLOSE.addEventListener(clickEvent, (e) => { e.preventDefault(); closeChat(); });
+      CHAT_SEND.addEventListener(clickEvent, (e) => { e.preventDefault(); handleSend(CHAT_INPUT.value); });
+      CHAT_INPUT.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(CHAT_INPUT.value); } });
+      QUICK_CHIPS.forEach(chip => chip.addEventListener(clickEvent, (ev) => { ev.preventDefault(); handleSend(chip.dataset.msg || chip.textContent); }));
+
+      document.addEventListener('keydown', (e) => { if (e.key === '?') { e.preventDefault(); if (CHAT_PANEL.classList.contains('open')) closeChat(); else { openChat(); showWelcome(); } } });
+
+      setTimeout(() => { if (!CHAT_PANEL.classList.contains('open') && CHAT_BADGE) { CHAT_BADGE.style.display = 'block'; CHAT_BADGE.textContent = '!'; } }, 1800);
+
+      CHAT_BUTTON.setAttribute('aria-describedby', 'support-chat-button-hint');
+      const hint = document.createElement('div');
+      hint.id = 'support-chat-button-hint';
+      hint.style.position = 'absolute';
+      hint.style.left = '-9999px';
+      hint.style.top = 'auto';
+      hint.textContent = 'Open support chat (press ? to toggle)';
+      document.body.appendChild(hint);
+
+      document.addEventListener(clickEvent, (evt) => {
+        if (!CHAT_PANEL.classList.contains('open')) return;
+        const target = evt.target;
+        if (CHAT_PANEL.contains(target) || CHAT_BUTTON.contains(target)) return;
+        if (window.innerWidth <= 880) closeChat();
+      }, { passive: true });
+
+      const observer = new MutationObserver(() => {
+        if (CHAT_PANEL.classList.contains('open')) CHAT_PANEL.setAttribute('aria-hidden', 'false');
+        else CHAT_PANEL.setAttribute('aria-hidden', 'true');
+      });
+      observer.observe(CHAT_PANEL, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initChatWidget);
+    else setTimeout(initChatWidget, 0);
+  })();
+</script>
 </body>
 </html>

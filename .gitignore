@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtualenvs
+venv/
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite3
+shift_backend.db
+
+# IDEs
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Logs and packaging
+*.log
+dist/
+build/
+*.egg-info/
+
+# Archives
+*.zip

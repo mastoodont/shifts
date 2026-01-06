@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shift-scheduler-ai"
+version = "0.1.0"
+description = "AI-assisted shift scheduling for cafés and restaurants (backend + frontend)"
+authors = [
+  { name="Your Name", email="you@example.com" }
+]
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+dependencies = [
+  "fastapi>=0.95.0",
+  "uvicorn[standard]>=0.22.0",
+  "requests>=2.31.0",
+  "pulp>=2.7.0",
+  "python-dotenv>=1.0.0",
+  "gunicorn>=21.2.0"
+]

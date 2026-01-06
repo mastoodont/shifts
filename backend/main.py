@@ -263,13 +263,14 @@ def health_check():
     db_ok = False
     try:
         # Try to connect to the database and execute a simple query
-        c = db().cursor()
-        c.execute("SELECT 1")
-        c.fetchone()
+        with db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
         db_ok = True
     except Exception as e:
         logger.error(f"Health check failed - database error: {e}")
-        return {"status": "error", "db": False, "error": str(e)}
+        return {"status": "error", "db": False}
     
     return {"status": "ok", "db": db_ok}
 
@@ -1224,7 +1225,7 @@ def ai_suggest_schedule(restaurant_id: int, max_suggestions: Optional[int] = 100
         if not shifts_for_day:
             # fallback to load table shifts
             shifts_for_day = []
-            load_rows = c.execute("SELECT shift_id, required FROM load WHERE restaurant_id=? AND day=", (restaurant_id, d)).fetchall()
+            load_rows = c.execute("SELECT shift_id, required FROM load WHERE restaurant_id=? AND day=?", (restaurant_id, d)).fetchall()
             for lr in load_rows:
                 shifts_for_day.append({"day": d, "shift_id": lr["shift_id"], "recommended": lr["required"]})
 

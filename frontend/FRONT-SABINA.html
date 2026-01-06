@@ -1,0 +1,2640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shift Scheduler — AI-Powered</title>
+
+  <!-- Fonts: Inter for body, Merriweather for headings (alternative pair requested) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:           #f7f4ec;
+      --surface:      #fdfbfb;
+      --surface-2:    #f2ede3;
+      --text:         #3a2f24;
+      --text-sec:     #6b5f52; /* slightly darker for contrast */
+      --accent:       #f4a261;
+      --accent-dark:  #e76f51;
+      --accent-glow:  rgba(244,162,97,0.25);
+      --warm-accent:  #e9c46a;
+      --success:      #86a875;
+      --danger:       #d9776b;
+      --glass:        rgba(253,251,251,0.85);
+      --glass-strong: rgba(253,251,251,0.96);
+      --glass-border: rgba(122,110,94,0.15);
+      --shadow-sm:    0 8px 24px rgba(58,47,36,0.10);
+      --shadow-md:    0 20px 48px rgba(58,47,36,0.15);
+      --radius:       14px;
+      --radius-lg:    20px;
+      --transition:   all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      --btn-min-height: 48px;
+      --base-font-size: 16px;
+    }
+
+    html { font-size: var(--base-font-size); }
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      background-image:
+        radial-gradient(circle at 12% 18%, rgba(244,162,97,0.12) 0%, transparent 45%),
+        radial-gradient(circle at 88% 82%, rgba(233,196,106,0.10) 0%, transparent 55%);
+      -webkit-font-smoothing:antialiased;
+    }
+
+    /* Improved visible focus for keyboard users */
+    :focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(244,162,97,0.18), 0 6px 22px rgba(58,47,36,0.08);
+      border-radius: 10px;
+    }
+
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--glass-strong); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 1rem 1.6rem;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 1rem; flex-wrap: wrap;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Logo removed as requested (no image) */
+    h1 {
+      font-family: 'Merriweather', 'Plus Jakarta Sans', serif;
+      font-weight: 700;
+      font-size: clamp(1.35rem, 4.6vw, 1.85rem);
+      letter-spacing: -0.4px;
+      color: var(--text);
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* "Most" label next to heading: now same size as heading per request */
+    .most-label {
+      font-family: inherit;
+      font-weight: 700;
+      color: #5cc6ff; /* keep kitchen blue color as requested earlier */
+      font-size: inherit;
+      display: inline-block;
+      line-height: 1;
+      transform: translateY(0);
+      letter-spacing: -0.4px;
+    }
+
+    .status-badge {
+      padding: 0.5rem 0.95rem; border-radius: 999px;
+      font-size: 0.9rem; font-weight: 600;
+      background: var(--glass); border: 1px solid var(--glass-border);
+      backdrop-filter: blur(8px); color: var(--text);
+      display: inline-flex; align-items:center; gap:8px;
+    }
+    .badge-active  { background: rgba(244,162,97,0.14); color: var(--accent); border-color: var(--accent); }
+    .badge-expired { background: rgba(217,119,107,0.12); color: var(--danger); border-color: var(--danger); }
+
+    nav {
+      background: var(--glass); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 0.85rem 1rem; position: sticky; top: 72px; z-index: 90;
+      display: flex; gap: 0.6rem; flex-wrap: nowrap; justify-content: flex-start;
+      box-shadow: var(--shadow-sm);
+      overflow-x: auto; -webkit-overflow-scrolling: touch; /* adapt for mobile: horizontal scroll */
+      scroll-behavior: smooth;
+    }
+
+    nav button {
+      background: transparent; border: none;
+      padding: 0.65rem 1rem; color: var(--text-sec); font-weight: 600;
+      border-radius: 12px; cursor: pointer;
+      transition: var(--transition); min-height: 44px; min-width:96px;
+      display: inline-flex; align-items: center; justify-content:center; gap:8px;
+      flex: 0 0 auto; /* don't shrink: better touch targets on mobile */
+    }
+
+    nav button:hover { background: var(--glass-strong); color: var(--text); transform: translateY(-2px); }
+
+    nav button.active {
+      background: linear-gradient(135deg, var(--accent), var(--warm-accent));
+      color: #fdfbfb; box-shadow: 0 6px 18px rgba(244,162,97,0.28);
+    }
+
+    .container { max-width: 1220px; margin: 2rem auto; padding: 0 1.2rem; }
+
+    .card {
+      background: var(--glass); backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+      padding: 1.6rem; margin-bottom: 1.6rem; box-shadow: var(--shadow-md);
+      transition: var(--transition);
+    }
+
+    .card:hover { transform: translateY(-4px); box-shadow: 0 24px 56px rgba(58,47,36,0.12); }
+
+    .card-title {
+      font-family: 'Merriweather', serif; font-weight: 700;
+      font-size: 1.2rem; color: var(--text); margin-bottom: 0.9rem;
+    }
+
+    input, select, textarea {
+      width: 100%; padding: 0.92rem 1rem; margin: 0.6rem 0;
+      border-radius: 12px; border: 1px solid var(--glass-border);
+      background: rgba(253,251,251,0.9); color: var(--text);
+      font-size: 1rem; transition: var(--transition); backdrop-filter: blur(4px);
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 6px var(--accent-glow);
+      background: rgba(253,251,251,0.98);
+    }
+
+    button {
+      padding: 0.85rem 1.25rem; border: none; border-radius: 12px;
+      cursor: pointer; font-size: 0.98rem; font-weight: 600;
+      transition: var(--transition); min-height: var(--btn-min-height);
+      display: inline-flex; align-items:center; gap:10px; justify-content:center;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--warm-accent));
+      color: #fdfbfb; box-shadow: 0 6px 20px rgba(244,162,97,0.28);
+    }
+    .btn-primary:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 12px 32px rgba(244,162,97,0.4); }
+
+    .btn-success { background: var(--success); color: #fdfbfb; box-shadow: 0 6px 20px rgba(134,168,117,0.18); }
+    .btn-danger  { background: var(--danger); color: #fdfbfb; }
+
+    .btn-accent { background: linear-gradient(90deg, #5cc6ff, #7bd389); color: #052a10; box-shadow: 0 8px 22px rgba(92,198,255,0.12); }
+    .btn-ghost { background: transparent; border: 1px dashed rgba(122,110,94,0.12); color: var(--text-sec); min-height:44px; }
+
+    .modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(58,47,36,0.45); backdrop-filter: blur(10px);
+      z-index: 1000; align-items: center; justify-content: center; padding: 1.2rem;
+    }
+
+    .modal-content {
+      background: var(--glass-strong); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg); padding: 1.6rem;
+      width: 94%; max-width: 520px; box-shadow: var(--shadow-md);
+    }
+
+    .modal-header {
+      font-family: 'Merriweather', serif; font-weight: 700;
+      font-size: 1.2rem; margin-bottom: 1rem;
+    }
+
+    .modal-buttons { margin-top: 1.2rem; display: flex; gap: 0.8rem; justify-content: flex-end; }
+
+    .toast {
+      position: fixed; top: 28px; right: 28px;
+      padding: 1rem 1.4rem; border-radius: 12px;
+      color: #fdfbfb; z-index: 2000; min-width: 280px;
+      box-shadow: 0 10px 30px rgba(58,47,36,0.20); backdrop-filter: blur(8px);
+    }
+
+    .downloads-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 1rem; }
+
+    .small  { font-size: 0.95rem; color: var(--text-sec); }
+    .note   { color: var(--text-sec); font-size: 0.95rem; margin-top: 0.8rem; }
+    .disabled { opacity: 0.48; cursor: not-allowed; pointer-events: none; }
+
+    .font-control {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--glass); padding: 0.5rem 0.8rem;
+      border-radius: 12px; border: 1px solid var(--glass-border);
+      backdrop-filter: blur(8px);
+    }
+
+    .font-control button {
+      background: rgba(253,251,251,0.20); color: var(--text);
+      border: none; border-radius: 8px; padding: 0.35rem 0.8rem; cursor: pointer;
+      min-height:32px;
+    }
+
+    .font-control input[type="range"] {
+      width: 130px; -webkit-appearance: none; height: 6px;
+      border-radius: 7px; background: rgba(122,110,94,0.25);
+    }
+
+    .font-control input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--accent); cursor: pointer;
+      box-shadow: 0 3px 12px rgba(244,162,97,0.4);
+    }
+
+    .sr-only {
+      position: absolute !important; height: 1px; width: 1px;
+      overflow: hidden; clip: rect(1px,1px,1px,1px); white-space: nowrap;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items:start; }
+    .list-row { display:flex; gap:10px; align-items:center; justify-content:space-between; padding:10px 12px; background: rgba(253,251,251,0.72); border-radius:10px; border:1px solid var(--glass-border); margin-bottom:8px; }
+    .chip { padding:6px 10px; border-radius:999px; background:rgba(253,251,251,0.6); border:1px solid var(--glass-border); font-weight:600; }
+
+    .schedule-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:12px; }
+    .schedule-card { padding:12px; border-radius:12px; background:rgba(253,251,251,0.75); border:1px solid var(--glass-border); }
+    .apply-btn { background:transparent; border:1px solid rgba(122,110,94,0.15); padding:8px 12px; border-radius:10px; cursor:pointer; min-height:36px; }
+
+    .loading-spinner {
+      border: 3px solid rgba(0,0,0,0.06);
+      border-left-color: var(--accent);
+      border-radius: 50%;
+      width: 16px; height: 16px; display:inline-block; vertical-align: middle;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Simple tooltip style for elements with data-tooltip */
+    [data-tooltip] { position: relative; }
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(100% + 8px);
+      background: rgba(10,10,10,0.92);
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      z-index: 2001;
+    }
+    [data-tooltip]:hover::after, [data-tooltip]:focus::after, [data-tooltip]:active::after {
+      opacity: 1;
+    }
+
+    /* Simple walkthrough overlay + highlight */
+    #tourOverlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1500; display:none;
+      align-items: center; justify-content: center;
+      /* Allow interactions to pass through to page except for tooltip/highlight controls (default).
+         When tour is running pointer-events will be enabled via JS to ensure consistent behavior on mobile.
+      */
+      pointer-events: none;
+      -webkit-overflow-scrolling: touch;
+      touch-action: manipulation;
+    }
+    /* Make tooltip and highlight interactive (pointer-events enabled) */
+    #tourOverlay .tour-tooltip, #tourOverlay #tourHighlight { pointer-events: auto; touch-action: manipulation; -webkit-user-select: none; -webkit-touch-callout: none; }
+    .tour-tooltip {
+      position: absolute; max-width: 420px; background: var(--glass-strong); color: var(--text);
+      padding: 14px; border-radius: 12px; border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-md); z-index: 1502; font-size: 0.98rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      -webkit-user-select: none;
+      /* Ensure tooltip can shrink to viewport width */
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      box-sizing: border-box;
+    }
+    .tour-controls { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+
+    @media (max-width: 760px) {
+      header { padding: 0.9rem 1rem; }
+      nav   { padding: 0.6rem 0.8rem; }
+      .container { padding: 0 0.8rem; }
+      .logo-img { width: 40px; height: 40px; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .tour-tooltip { left: 12px !important; right: 12px !important; top: auto !important; bottom: 12px !important; transform:none !important; }
+      /* Slightly smaller nav buttons on mobile */
+      nav button { min-width:80px; font-size:0.9rem; }
+    }
+
+    @media (max-width: 420px) {
+      nav { flex-wrap: wrap; }
+    }
+
+    footer.app-footer {
+      margin-top: 1.4rem; padding: 1rem 0; text-align:center; color:var(--text-sec); font-size:0.95rem;
+    }
+    footer.app-footer a { color: var(--accent); text-decoration: none; font-weight:600; }
+
+    /* small help button next to controls */
+    .help-btn {
+      background: transparent; border: 1px solid rgba(122,110,94,0.12); padding:6px 10px; border-radius:10px; cursor:pointer;
+      display:inline-flex; align-items:center; gap:6px; font-weight:600;
+    }
+
+    /* prominent empty-state banner */
+    .empty-banner {
+      border: 2px dashed rgba(122,110,94,0.12);
+      padding: 1.2rem;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(250,248,244,0.3), rgba(253,251,249,0.5));
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      flex-wrap:wrap;
+    }
+
+    /* =====================================
+       New additions for requested features
+       ===================================== */
+
+    /* Global full-screen loader */
+    #globalLoader {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,10,0.36);
+      z-index: 3000;
+      align-items: center;
+      justify-content: center;
+    }
+    #globalLoader .loading-spinner {
+      width: 64px;
+      height: 64px;
+      border-width: 6px;
+      border-left-color: var(--accent);
+    }
+
+    /* Hide scrollbar for nav */
+    nav::-webkit-scrollbar { display: none; }
+    nav { scrollbar-width: none; }
+
+    /* Toast container & items */
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 4000; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+    .toast-item { color: #fff; padding: 12px 16px; border-radius: 12px; box-shadow: var(--shadow-md); font-weight: 600; min-width: 240px; }
+    .toast-success { background: #86a875; }
+    .toast-error { background: #d9776b; }
+    .toast-info { background: #5cc6ff; color: #052a10; }
+
+    /* Skeleton loaders */
+    .skeleton { background: linear-gradient(90deg, rgba(122,110,94,0.06), rgba(122,110,94,0.09)); border-radius: 8px; height: 16px; width: 100%; margin-bottom: 10px; }
+    .skeleton.small { height: 12px; width: 60%; }
+    .skeleton-pulse { animation: pulse 1.2s ease-in-out infinite; opacity: 1; }
+    @keyframes pulse { 0% { opacity: 1; transform: translateY(0); } 50% { opacity: 0.6; } 100% { opacity: 1; transform: translateY(0); } }
+
+    /* small date-format helper placed beside date inputs */
+    .date-format {
+      display: inline-block;
+      margin-left: 8px;
+      color: var(--text-sec);
+      font-weight: 600;
+      font-size: 0.95rem;
+      vertical-align: middle;
+    }
+
+    /* Ensure terms checkboxes are inline and responsive */
+    .terms-container {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .terms-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text-sec);
+      font-size: 0.95rem;
+    }
+    .terms-line input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+    }
+
+    /* Dark-styled reset button (requested "темная краска RESET") */
+    .btn-reset {
+      background: #0b0f1a;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 8px 20px rgba(2,6,12,0.5);
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      font-weight: 700;
+      min-height: 44px;
+    }
+    .btn-reset:hover { transform: translateY(-2px) scale(1.01); box-shadow: 0 14px 32px rgba(2,6,12,0.6); }
+
+    /* Ensure reset button stands out but is non-destructive until confirmed */
+    .btn-reset[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+
+    /* Make sure timelines inputs when empty look consistent */
+    #timelinePreview .schedule-card input[type="time"] {
+      background: rgba(255,255,255,0.95);
+    }
+  </style>
+</head>
+<body>
+<a href="#main" class="sr-only">Skip to main content</a>
+
+<header>
+  <div class="logo-container">
+    <!-- Logo image removed per request. Keep app name only. -->
+    <h1>Shift Scheduler AI<span class="most-label" aria-hidden="true">Most</span></h1>
+  </div>
+  <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+    <div class="font-control" role="region" aria-label="Font size control" title="Adjust font size">
+      <button id="fontDec" aria-label="Decrease font size" title="Decrease font size">−</button>
+      <input id="fontRange" type="range" min="12" max="22" step="1" value="16" aria-label="Font size" />
+      <button id="fontInc" aria-label="Increase font size" title="Increase font size">+</button>
+      <span id="fontSizeLabel" aria-live="polite" style="color:var(--text-sec);font-size:0.93rem;">16px</span>
+    </div>
+
+    <div id="subscriptionStatus" class="status-badge" aria-live="polite">
+      Loading...
+    </div>
+
+    <!-- Help / Tour button (non-destructive addition) -->
+    <button id="startTourBtn" class="help-btn" data-tooltip="Start a guided tour" aria-label="Start walkthrough">Tour</button>
+  </div>
+</header>
+
+<nav>
+  <button data-tab="dashboard" class="active" aria-pressed="true">Dashboard</button>
+  <button data-tab="employees">Employees</button>
+  <button data-tab="shifts">Shifts</button>
+  <button data-tab="ai">AI Forecast</button>
+  <button data-tab="schedule">Schedule</button>
+  <button data-tab="downloads">Downloads</button>
+  <button data-tab="instructions">Instructions</button>
+</nav>
+
+<main id="main" class="container" role="main" aria-labelledby="main-heading">
+  <h2 id="main-heading" class="sr-only">Main application</h2>
+
+  <div id="tab-dashboard" class="tab-content">
+    <!-- Empty-state banner: shown when there are no restaurants -->
+    <div id="noRestaurantBanner" class="card empty-banner" style="display:none;">
+      <div style="flex:1; min-width:220px;">
+        <div style="font-weight:700; margin-bottom:6px;">Create your first restaurant</div>
+        <div class="small" style="margin-bottom:8px;">You haven't created any restaurants yet. Create one to start adding shifts, employees and generate schedules.</div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <input id="newRestaurantName_inline" placeholder="Restaurant name" aria-label="New restaurant name (quick)" />
+          <input id="newPlanningDays_inline" type="number" min="1" max="30" value="7" style="width:110px;" aria-label="Planning days (quick)" />
+          <button class="btn-primary" onclick="createRestaurantInline()">Create</button>
+        </div>
+      </div>
+      <div style="min-width:180px; text-align:right;">
+        <div class="small">After creation you'll be taken to the restaurant and can subscribe or add shifts/employees.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Planning Horizon</div>
+      <p><strong>This tool creates staff schedules for <span id="planningDaysInfo">X</span> days ahead</strong> 
+      (depending on the selected restaurant's settings).</p>
+      <p class="small">All suggestions are advisory — final schedule must be confirmed by a manager.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Select Restaurant</div>
+      <label for="restaurantSelect" class="sr-only">Select restaurant</label>
+      <select id="restaurantSelect" onchange="onRestaurantChange()" aria-label="Select restaurant" data-tooltip="Choose a restaurant to work on">
+        <option value="">— Select restaurant —</option>
+      </select>
+      <div id="restaurantInfo" style="margin-top:1rem; color:var(--text-sec);"></div>
+
+      <div style="margin-top:1rem; display:flex; gap:12px; flex-wrap:wrap;">
+        <input id="newRestaurantName" placeholder="New restaurant name" aria-label="New restaurant name" />
+        <input id="newPlanningDays" type="number" min="1" max="30" value="7" style="width:110px;" aria-label="Planning days" />
+        <button class="btn-primary" onclick="createRestaurant()">Create</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Subscription</div>
+      <p class="small">Status: <strong id="paidStatus">...</strong></p>
+      <p class="small">Valid until: <strong id="paidUntil">—</strong></p>
+      <div class="terms-container" aria-live="polite">
+        <label class="terms-line">
+          <input type="checkbox" id="acceptTerms">
+          I accept the <span class="terms-link" onclick="openTerms()" style="color:var(--accent); cursor:pointer; text-decoration:underline;">Terms &amp; Conditions</span>
+        </label>
+        <label class="terms-line">
+          <input type="checkbox" id="acceptPrivacy">
+          I accept the <span class="terms-link" onclick="openPrivacy()" style="color:var(--accent); cursor:pointer; text-decoration:underline;">Privacy Policy</span>
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+        <button id="payBtn" class="btn-primary" style="min-width:160px;" onclick="paySubscription()" disabled>Subscribe — 1 month ($30)</button>
+        <button id="payBtn2" class="btn-primary" style="min-width:160px;" onclick="paySubscription(55,2)" disabled>Subscribe — 2 months ($55)</button>
+        <button id="payBtn3" class="btn-primary" style="min-width:160px;" onclick="paySubscription(80,3)" disabled>Subscribe — 3 months ($80)</button>
+      </div>
+      <div style="margin-top:12px;">
+        <p class="small">Note: Payment opens PayPal. The backend handles actual subscription activation after PayPal webhook.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Quick Actions</div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <button class="btn-ghost" onclick="refreshEmployeesList()" data-tooltip="Reload employee list">Refresh Employees</button>
+        <button class="btn-ghost" onclick="refreshShiftsList()" data-tooltip="Reload shifts list">Refresh Shifts</button>
+        <button class="btn-ghost" onclick="populateShiftDependentControls()" data-tooltip="Refresh shift selectors">Refresh Shift Controls</button>
+      </div>
+    </div>
+
+    <!-- Timeline Setup: define structure and preview (new feature) -->
+    <div class="card">
+      <div class="card-title">Timeline Setup</div>
+      <p class="small">Define how many shifts per day and the planning horizon, then generate a visual timeline preview of time slots per day. This preview does not assign employees.</p>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <label style="width:200px;">
+          Number of shifts per day
+          <input id="numShiftsPerDay" type="number" min="1" value="2" />
+        </label>
+        <label style="width:200px;">
+          Days ahead (preview)
+          <input id="planningDaysPreview" type="number" min="1" value="7" />
+        </label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn-primary" onclick="generateTimelinePreview()">Generate Timeline Preview</button>
+          <!-- Dark-styled RESET button that clears the timeline preview (non-destructive until saved) -->
+          <button id="resetTimelineBtn" class="btn-reset" onclick="resetTimelinePreview()" aria-disabled="false" title="Reset the timeline preview (clears inputs and preview)">RESET Preview</button>
+        </div>
+      </div>
+      <div id="timelinePreview" class="schedule-grid" style="margin-top:12px;"></div>
+      <div class="small" style="margin-top:8px;">Optionally, if a restaurant is selected and you change the days ahead, the restaurant's planning horizon can be updated.</div>
+    </div>
+
+  </div>
+
+  <div id="tab-employees" class="tab-content" style="display:none;">
+    <div class="card">
+      <div class="card-title">Employees</div>
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <button class="btn-primary" onclick="openAddEmployeeModal()">+ Add Employee</button>
+        <button id="btnExportEmployeesMain" class="btn-primary" onclick="exportEmployeesFromMain()">Export Employees CSV</button>
+      </div>
+      <div id="employeesList" style="margin-top:1rem; min-height:120px;"></div>
+    </div>
+  </div>
+
+  <div id="tab-shifts" class="tab-content" style="display:none;">
+    <div class="card">
+      <div class="card-title">Shifts</div>
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <button class="btn-primary" onclick="openAddShiftModal()">+ Add Shift</button>
+        <button class="btn-success" onclick="generateSchedule()" title="Generate schedule now">Generate Schedule</button>
+      </div>
+
+      <div style="margin-top:12px;" class="grid-2">
+        <div>
+          <div class="card" style="padding:12px;">
+            <div class="card-title" style="font-size:1rem; margin-bottom:8px;">Manage Availability</div>
+            <p class="small">Set employee availability per day index (0 = today) and shift.</p>
+
+            <label for="availEmployee">Employee</label>
+            <select id="availEmployee"><option value="">— select employee —</option></select>
+
+            <label for="availDay">Day (0 = today)</label>
+            <input id="availDay" type="number" min="0" value="0" />
+
+            <label for="availShift">Shift</label>
+            <select id="availShift"><option value="">— select shift —</option></select>
+
+            <div style="display:flex; gap:10px; margin-top:6px;">
+              <button class="btn-primary" onclick="addAvailabilityRow()">Add</button>
+              <button class="btn-primary" onclick="submitAvailabilityBatch()">Submit all</button>
+              <button class="btn-ghost" onclick="clearAvailQueue()">Clear queue</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="padding:12px;">
+            <div class="card-title" style="font-size:1rem; margin-bottom:8px;">Queued Availability</div>
+            <div id="availQueue" style="min-height:120px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="shiftsList" style="margin-top:18px;"></div>
+    </div>
+  </div>
+
+  <div id="tab-ai" class="tab-content" style="display:none;">
+    <div class="card">
+      <div class="card-title">AI Forecast</div>
+      <p class="small">AI features, historical POS uploads and holiday definitions are used to produce better forecasts. These features require an active subscription.</p>
+      <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap;">
+        <button class="btn-primary" onclick="loadAIForecast()">Load Forecast</button>
+        <button class="btn-primary" onclick="loadAIHints()">Load Hints</button>
+        <button class="btn-primary" onclick="getAISuggestions()">Get AI Suggestions</button>
+      </div>
+
+      <hr style="margin:12px 0; border:none; border-top:1px solid var(--glass-border);" />
+
+      <div style="margin-top:12px;" class="grid-2">
+        <div class="card" style="padding:12px;">
+          <div class="card-title" style="font-size:1rem; margin-bottom:8px;">POS Data (Sales)</div>
+          <p class="small">Upload past shift data (date, shift, covers, optional revenue). Used by AI forecast.</p>
+          <label for="posDate">Date</label>
+          <input id="posDate" type="date" lang="en" />
+          <span class="date-format" aria-hidden="true">mm</span>
+          <label for="posShift">Shift</label>
+          <select id="posShift"><option value="">— select shift —</option></select>
+          <label for="posCovers">Covers</label>
+          <input id="posCovers" type="number" min="0" value="10" />
+          <label for="posRevenue">Revenue (optional)</label>
+          <input id="posRevenue" type="number" step="0.01" />
+          <div style="display:flex; gap:10px; margin-top:6px;">
+            <button class="btn-primary" onclick="addPosRow()">Add entry</button>
+            <button class="btn-primary" onclick="submitPosData()">Submit all</button>
+            <button class="btn-ghost" onclick="clearPosQueue()">Clear queue</button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:12px;">
+          <div class="card-title" style="font-size:1rem; margin-bottom:8px;">Queued POS entries</div>
+          <div id="posQueue" style="min-height:120px;"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:18px;" class="grid-2">
+        <div class="card" style="padding:12px;">
+          <div class="card-title" style="font-size:1rem; margin-bottom:8px;">Holidays</div>
+          <p class="small">Add holiday dates so forecasts can adjust predictions.</p>
+          <label for="holidayDate">Date</label>
+          <input id="holidayDate" type="date" lang="en" />
+          <span class="date-format" aria-hidden="true">mm</span>
+          <label for="holidayName">Name</label>
+          <input id="holidayName" placeholder="e.g. Independence Day" />
+          <div style="display:flex; gap:10px; margin-top:6px;">
+            <button class="btn-primary" onclick="addHolidayRow()">Add holiday</button>
+            <button class="btn-primary" onclick="submitHolidays()">Submit all</button>
+            <button class="btn-ghost" onclick="clearHolidayQueue()">Clear queue</button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:12px;">
+          <div class="card-title" style="font-size:1rem; margin-bottom:8px;">Queued Holidays</div>
+          <div id="holidayQueue" style="min-height:120px;"></div>
+        </div>
+      </div>
+
+      <hr style="margin:12px 0; border:none; border-top:1px solid var(--glass-border);" />
+
+      <div style="margin-top:12px;" class="grid-2">
+        <div class="card" style="padding:12px;">
+          <div class="card-title" style="font-size:1rem; margin-bottom:8px;">Load (expected staff per day/shift)</div>
+          <p class="small">Set required staff per day index (0-based) and shift. Use this to seed required load for scheduling.</p>
+
+          <label for="loadDay">Day (0 = today)</label>
+          <input id="loadDay" type="number" min="0" value="0" />
+          <label for="loadShift">Shift</label>
+          <select id="loadShift"><option value="">— select shift —</option></select>
+          <label for="loadRequired">Required staff</label>
+          <input id="loadRequired" type="number" min="0" value="1" />
+          <div style="display:flex; gap:10px;">
+            <button class="btn-primary" onclick="addLoadRow()">Add</button>
+            <button class="btn-primary" onclick="submitLoadBatch()">Submit batch</button>
+            <button class="btn-ghost" onclick="clearLoadQueue()">Clear queue</button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:12px;">
+          <div class="card-title" style="font-size:1rem; margin-bottom:8px;">Queued Load Entries</div>
+          <div id="loadQueue" style="min-height:120px;"></div>
+        </div>
+      </div>
+
+      <hr style="margin:12px 0; border:none; border-top:1px solid var(--glass-border);" />
+
+      <div id="aiForecastOut" style="margin-top:12px;"></div>
+      <div id="aiHintsOut" style="margin-top:12px;"></div>
+      <div id="aiSuggestionsOut" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <div id="tab-schedule" class="tab-content" style="display:none;">
+    <div class="card">
+      <div class="card-title">Schedule</div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <button class="btn-success" onclick="generateSchedule()">Generate schedule</button>
+        <input id="viewScheduleId" placeholder="Schedule ID to view" style="width:180px;" />
+        <button class="btn-primary" onclick="viewScheduleById()">View schedule</button>
+      </div>
+
+      <div id="scheduleStatus" style="margin-top:12px;"></div>
+      <div id="scheduleDisplay" style="margin-top:12px;"></div>
+      <div style="margin-top:12px;">
+        <p class="small">Each schedule item includes an "Apply" button that fetches non-destructive manual instructions from the backend.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-downloads" class="tab-content" style="display:none;">
+    <div class="card">
+      <div class="card-title">Downloads</div>
+
+      <label for="downloadRestaurantSelect">Select restaurant</label>
+      <select id="downloadRestaurantSelect" aria-label="Select restaurant for downloads">
+        <option value="">— Select restaurant —</option>
+      </select>
+      <div id="downloadRestaurantInfo" class="small" style="margin-top:0.8rem;"></div>
+
+      <div style="margin-top:1.2rem;">
+        <label style="display:block; margin-bottom:0.6rem; color:var(--text-sec);">Available downloads</label>
+        <div class="downloads-grid">
+          <button id="btnDL_Employees" class="btn-primary disabled" onclick="downloadEmployeesCSV()" disabled aria-disabled="true">Download Employees CSV</button>
+          <button id="btnDL_Shifts" class="btn-primary disabled" onclick="downloadShiftsCSV()" disabled aria-disabled="true">Download Shifts CSV</button>
+          <button id="btnDL_Schedule" class="btn-primary disabled" onclick="downloadLatestScheduleCSV()" disabled aria-disabled="true">Download Latest Schedule CSV</button>
+          <button id="btnDL_AI" class="btn-primary disabled" onclick="downloadAISuggestionsCSV()" disabled aria-disabled="true">Download AI Suggestions CSV</button>
+        </div>
+        <div class="note">Note: Latest Schedule export requires a generated schedule. AI Suggestions are advisory only.</div>
+      </div>
+
+      <div style="margin-top:1.6rem;">
+        <label style="display:block; margin-bottom:0.6rem; color:var(--text-sec);">Quick actions</label>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <button class="btn-primary" onclick="goToMainApp()">Back to Dashboard</button>
+          <button class="btn-primary" onclick="refreshDownloadRestaurants()">Refresh list</button>
+        </div>
+      </div>
+
+      <div style="margin-top:1.2rem;">
+        <label style="display:block; margin-bottom:0.6rem; color:var(--text-sec);">Direct links (open in new tab)</label>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <a id="linkEmployeesCSV" class="btn-primary" style="display:inline-block; padding:0.7rem 1rem; text-decoration:none;" target="_blank" href="#">Employees CSV</a>
+          <a id="linkShiftsCSV" class="btn-primary" style="display:inline-block; padding:0.7rem 1rem; text-decoration:none;" target="_blank" href="#">Shifts CSV</a>
+          <a id="linkLatestScheduleCSV" class="btn-primary" style="display:inline-block; padding:0.7rem 1rem; text-decoration:none;" target="_blank" href="#">Latest Schedule CSV</a>
+          <a id="linkAISuggestionsCSV" class="btn-primary" style="display:inline-block; padding:0.7rem 1rem; text-decoration:none;" target="_blank" href="#">AI Suggestions CSV</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-instructions" class="tab-content" style="display:none;">
+    <div class="card">
+      <div class="card-title">Instructions for Use</div>
+
+      <p class="small">Welcome to Shift Scheduler AI — this guide explains how to use the product step by step. Follow the numbered steps for a smooth experience.</p>
+
+      <h3>Quick Start</h3>
+      <ol>
+        <li>Create a restaurant on the Dashboard using the "Create" form.</li>
+        <li>Select the restaurant in the top selector to load its settings (planning horizon, subscription).</li>
+        <li>Add shifts and employees (Shifts and Employees tabs).</li>
+        <li>Set employee availability and required load, then generate a schedule and review the recommendations.</li>
+      </ol>
+
+      <h3>Create a Restaurant</h3>
+      <p>Go to Dashboard → Select Restaurant → use the "New restaurant name" field and set the planning days. Click "Create". The system will automatically create two default shifts and populate load entries for the planning horizon.</p>
+
+      <h3>Employees and Shifts</h3>
+      <ul>
+        <li>Employees: Open the Employees tab → "+ Add Employee" → enter name and optional skills (comma separated). Skills help the AI match employees to shifts.</li>
+        <li>Shifts: Open the Shifts tab → "+ Add Shift" → enter a name (for example "Morning" or "Evening").</li>
+      </ul>
+
+      <h3>Set Employee Availability</h3>
+      <p>In the Shifts tab, use "Manage Availability" to select an employee, a day index (0 = today) and a shift, then Add and Submit all. Availability is used by the scheduler and AI suggestions.</p>
+
+      <h3>Set Load (Required Staff)</h3>
+      <p>In the AI Forecast tab, use the Load section to enter required staff per day index and shift. Add entries to queue, then submit as a batch. This fills the backend load table used by the scheduler and by fallback forecasting logic.</p>
+
+      <h3>Upload POS (Sales) History</h3>
+      <p>In AI Forecast → POS Data you can queue historical records (date, shift, covers, optional revenue). Submit the batch to store historical sales; the AI forecast will use this data to improve recommendations.</p>
+
+      <h3>Add Holidays</h3>
+      <p>In AI Forecast → Holidays add dates and names for holidays. Holidays are used to adjust forecast multipliers for special days.</p>
+
+      <h3>Subscriptions and Payments</h3>
+      <ul>
+        <li>Use the Subscribe buttons on the Dashboard to pay for 1, 2 or 3 months. You must accept Terms &amp; Conditions and the Privacy Policy first.</li>
+        <li>Payments open PayPal. After you approve payment, PayPal will notify the backend via webhook which updates the subscription validity.</li>
+        <li>The app displays an in-app reminder when a subscription will expire in 5 days or less; to receive external notifications (email/SMS) additional integration is required.</li>
+      </ul>
+
+      <h3>Generate a Schedule</h3>
+      <ol>
+        <li>Make sure the restaurant has employees and shifts defined, and availability entries where appropriate.</li>
+        <li>Optionally set load and upload POS history for better AI forecasting.</li>
+        <li>Click "Generate Schedule" (available in Shifts and Schedule tabs). The backend solves the scheduling optimization and returns a schedule ID.</li>
+        <li>Open the schedule using "View schedule" or by entering the schedule ID. Each item displays advisory metadata (forecast, reasons, confidence).</li>
+      </ol>
+
+      <h3>Apply Recommendation</h3>
+      <p>Each schedule item has an "Apply" button. This fetches a human-readable, non-destructive instruction explaining the recommendation and how to apply it manually in your rostering/payroll system.</p>
+
+      <h3>Exporting Data</h3>
+      <p>Use the Downloads tab to export CSV files (Employees, Shifts, Latest Schedule, AI Suggestions). Exports that contain forecast or AI data require an active subscription.</p>
+
+      <h3>Troubleshooting &amp; Tips</h3>
+      <ul>
+        <li>If AI endpoints return "Subscription required", verify the restaurant's paid_until is set and not expired.</li>
+        <li>Create employees and shifts before adding availability — availability entries must reference existing employees and shifts.</li>
+        <li>Use the Refresh actions in Dashboard if lists do not update immediately after creating new entities.</li>
+        <li>If schedule generation fails with "No feasible schedule", check availability and load constraints for conflicts or insufficient staff.</li>
+      </ul>
+
+      <h3>Support</h3>
+      <p>If you need assistance, provide the following when asking for help: restaurant ID, schedule ID (if applicable), a short description of the problem, and any error messages from the UI. This will help diagnose issues quickly.</p>
+
+      <p class="small">These instructions describe the intended usage model for Shift Scheduler AI. All schedule recommendations are advisory and must be confirmed by a manager before being applied to payroll or live operations.</p>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    © 2026 Shift Scheduler AI — <a href="https://example.com/terms" target="_blank" rel="noopener">Terms</a> · <a href="https://example.com/privacy" target="_blank" rel="noopener">Privacy</a>
+  </footer>
+</main>
+
+<!-- Modals -->
+<div id="modalAddEmployee" class="modal" role="dialog" aria-modal="true" aria-labelledby="addEmployeeTitle">
+  <div class="modal-content">
+    <div class="modal-header" id="addEmployeeTitle">Add Employee</div>
+    <input id="modalEmpName" placeholder="Employee name" aria-label="Employee name" />
+    <input id="modalEmpSkills" placeholder="Skills (comma separated, optional)" aria-label="Employee skills" />
+    <div class="modal-buttons">
+      <button class="btn-danger" onclick="closeModal('modalAddEmployee')">Cancel</button>
+      <button class="btn-primary" onclick="saveNewEmployee()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalAddShift" class="modal" role="dialog" aria-modal="true" aria-labelledby="addShiftTitle">
+  <div class="modal-content">
+    <div class="modal-header" id="addShiftTitle">Add Shift</div>
+    <input id="modalShiftName" placeholder="Shift name (e.g. Morning)" aria-label="Shift name" />
+    <!-- New optional start/end time inputs -->
+    <label for="modalShiftStart" class="small" style="margin-top:8px;">Start time (optional)</label>
+    <input id="modalShiftStart" type="time" aria-label="Shift start time" />
+    <label for="modalShiftEnd" class="small">End time (optional)</label>
+    <input id="modalShiftEnd" type="time" aria-label="Shift end time" />
+    <!-- New required_skills input: accepts JSON or simple "skill:count,skill2" format -->
+    <label for="modalShiftSkills" class="small" style="margin-top:8px;">Required skills (optional)</label>
+    <input id="modalShiftSkills" placeholder='e.g. cook:1, waiter:2 OR {"cook":1,"waiter":2}' aria-label="Required skills (JSON or comma-separated 'skill:count')" />
+    <div class="modal-buttons">
+      <button class="btn-danger" onclick="closeModal('modalAddShift')">Cancel</button>
+      <button class="btn-primary" onclick="saveNewShift()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalApplyInstructions" class="modal" role="dialog" aria-modal="true" aria-labelledby="applyTitle">
+  <div class="modal-content">
+    <div class="modal-header" id="applyTitle">Apply Instruction</div>
+    <pre id="applyInstructions" style="white-space:pre-wrap; max-height:360px; overflow:auto;"></pre>
+    <div class="modal-buttons">
+      <button class="btn-primary" onclick="closeModal('modalApplyInstructions')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Walkthrough overlay and tooltip container -->
+<div id="tourOverlay" role="dialog" aria-modal="true" style="display:none;">
+  <div id="tourHighlight" style="position:absolute; border: 3px solid var(--accent); border-radius:10px; box-shadow: 0 8px 32px rgba(244,162,97,0.18); background: transparent; z-index:1501;"></div>
+  <div id="tourTooltip" class="tour-tooltip" style="display:none;" tabindex="-1" role="dialog" aria-label="Tour tooltip">
+    <div id="tourContent"></div>
+    <div class="tour-controls">
+      <button id="tourPrev" class="btn-ghost">Prev</button>
+      <button id="tourNext" class="btn-primary">Next</button>
+      <button id="tourClose" class="btn-danger">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Global loader and toast container -->
+<div id="globalLoader" aria-hidden="true"><div class="loading-spinner" aria-hidden="true"></div></div>
+<div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+/* JS — preserved logic with robust improvements:
+   - API autodetection/fallback for easier deployment (no hardcoded localhost required).
+   - Terms & Privacy positioned inline (HTML/CSS changed).
+   - Pay buttons start disabled until checkboxes + restaurant selected.
+   - Everything else remains compatible with backend endpoints.
+   - Added support for entering required_skills in the Add Shift modal and sending it to the backend.
+*/
+
+/* ===== Utilities & UI helpers ===== */
+
+/*
+  API detection logic:
+  - If a global window.__SHIFT_SCHED_API__ is provided (e.g. by server during template rendering),
+    it will be used. Otherwise:
+  - If page served from localhost, use http://localhost:8000 (common dev case where backend runs on 8000).
+  - Otherwise use window.location.origin (same origin).
+*/
+const API = (window.__SHIFT_SCHED_API__) ? window.__SHIFT_SCHED_API__ : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? `http://localhost:8000` : window.location.origin);
+
+const FONT_KEY = 'shift-scheduler_font_size';
+let __fetchCount = 0;
+let currentRestaurantId = null;
+const SELECTED_KEY = 'shift-scheduler_selected_restaurant';
+
+function $(id){ return document.getElementById(id); }
+
+/* Font size controls */
+function setBaseFontSize(px, save = true) {
+  const v = Number(px);
+  if (isNaN(v) || v <= 0) return;
+  document.documentElement.style.setProperty('--base-font-size', v + 'px');
+  const label = $('fontSizeLabel');
+  if (label) label.textContent = `${v}px`;
+  const range = $('fontRange');
+  if (range) {
+    range.value = v;
+    range.setAttribute('aria-valuenow', v);
+    range.setAttribute('aria-valuetext', `${v} pixels`);
+  }
+  if (save) localStorage.setItem(FONT_KEY, String(v));
+}
+function loadFontSize() {
+  const stored = localStorage.getItem(FONT_KEY);
+  if (stored) {
+    setBaseFontSize(parseInt(stored, 10), false);
+  } else {
+    const computed = getComputedStyle(document.documentElement).getPropertyValue('--base-font-size').trim();
+    const num = parseInt(computed.replace('px','')) || 16;
+    setBaseFontSize(num, false);
+  }
+}
+function increaseFont(){ const range=$('fontRange'); const current=Number(range?range.value:16); setBaseFontSize(Math.min(Number(range?.max||22), current+1)); }
+function decreaseFont(){ const range=$('fontRange'); const current=Number(range?range.value:16); setBaseFontSize(Math.max(Number(range?.min||12), current-1)); }
+
+/* Global loader */
+function _globalLoaderEl(){ return $('globalLoader'); }
+function showGlobalLoader(){ __fetchCount++; const el=_globalLoaderEl(); if(el) el.style.display='flex'; }
+function hideGlobalLoader(){ __fetchCount=Math.max(0,__fetchCount-1); if(__fetchCount===0){ const el=_globalLoaderEl(); if(el) el.style.display='none'; } }
+
+/* Wrap fetch to show global loader for every request */
+(function(){
+  const origFetch = window.fetch.bind(window);
+  window.fetch = async (...args) => {
+    showGlobalLoader();
+    try {
+      return await origFetch(...args);
+    } finally {
+      hideGlobalLoader();
+    }
+  };
+})();
+
+/* Toasts */
+function toast(message, type='success'){ const container = $('toastContainer'); const item = document.createElement('div'); item.className='toast-item ' + (type==='error'?'toast-error':type==='info'?'toast-info':'toast-success'); item.textContent=message; container.appendChild(item); setTimeout(()=>{ item.style.transition='opacity 0.25s ease, transform 0.25s ease'; item.style.opacity='0'; item.style.transform='translateY(-8px)'; setTimeout(()=>item.remove(),300); },4000); }
+function showMessage(text, type='info'){ toast(text,type); }
+
+/* Skeleton helpers */
+function showSkeleton(id, count=4){ const el=$(id); if(!el) return; el.innerHTML=''; for(let i=0;i<count;i++){ const s=document.createElement('div'); s.className='skeleton skeleton-pulse'; if(i%2===0) s.classList.add('small'); el.appendChild(s);} }
+function hideSkeleton(id){ const el=$(id); if(!el) return; Array.from(el.children).forEach(ch=>{ if(ch.classList && ch.classList.contains('skeleton')) ch.remove(); }); }
+
+/* Shorthand for querySelectorAll when needed */
+function $all(sel){ return Array.from(document.querySelectorAll(sel)); }
+
+/* ===== Navigation initialization ===== */
+function navClickHandler(e) {
+  const btn = e.currentTarget;
+  if (!btn) return;
+  $all('nav button').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+  btn.classList.add('active'); btn.setAttribute('aria-pressed','true');
+  const tabId = `tab-${btn.dataset.tab}`;
+  $all('.tab-content').forEach(tab => tab.style.display = 'none');
+  const target = $(tabId);
+  if (target) target.style.display = 'block';
+  if (btn.dataset.tab === 'employees') refreshEmployeesList();
+  if (btn.dataset.tab === 'shifts') { refreshShiftsList(); populateShiftDependentControls(); }
+}
+function initNav() {
+  $all('nav button[data-tab]').forEach(btn => {
+    btn.removeEventListener('click', navClickHandler);
+    btn.addEventListener('click', navClickHandler);
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); }
+    });
+  });
+}
+
+/* ===== Modal helpers ===== */
+function openModal(id){ const el=$(id); if(el) { el.style.display='flex'; try{ el.querySelector('input,button,select,textarea')?.focus(); }catch(e){} } }
+function closeModal(id){ const el=$(id); if(el) el.style.display='none'; }
+
+/* ===== Core app logic preserved below (queues, API calls, exports, schedule, etc.) ===== */
+
+/* For brevity and safety: include unchanged functions verbatim as in prior working version.
+   These functions interact with the backend with identical endpoints and payloads.
+*/
+
+async function loadRestaurants() {
+  try {
+    const r = await fetch(`${API}/restaurants/`);
+    if (!r.ok) throw new Error('Failed to load');
+    const data = await r.json();
+
+    const selMain = $('restaurantSelect');
+    if (selMain) {
+      selMain.innerHTML = '<option value="">— Select restaurant —</option>';
+      data.forEach(rr => {
+        const opt = document.createElement('option');
+        opt.value = rr.id;
+        opt.textContent = `${rr.id} — ${rr.name} (${rr.planning_days} days)`;
+        selMain.appendChild(opt);
+      });
+      const selDL = $('downloadRestaurantSelect');
+      if (selDL) {
+        selDL.innerHTML = '<option value="">— Select restaurant —</option>';
+        data.forEach(rr => {
+          const opt = document.createElement('option');
+          opt.value = rr.id;
+          opt.textContent = `${rr.id} — ${rr.name} (${rr.planning_days} days)`;
+          selDL.appendChild(opt);
+        });
+      }
+    }
+
+    const banner = $('noRestaurantBanner');
+    if (banner) banner.style.display = (data && data.length === 0) ? 'flex' : 'none';
+
+    return data;
+  } catch (e) {
+    showMessage('Cannot load restaurants', 'error');
+    return [];
+  }
+}
+
+function showStatusLoading() {
+  const el = $('subscriptionStatus');
+  if (!el) return;
+  el.innerHTML = '<span class="loading-spinner" aria-hidden="true"></span> Loading...';
+}
+function clearStatusLoading() {}
+
+/* Following functions: loadRestaurantData, createRestaurant, createRestaurantInline,
+   employee/shift creation, queues, submit handlers, refresh lists, schedule generation,
+   AI endpoints, exports and the rest are included exactly as before to ensure 1:1 consistency with backend and behavior.
+   They are lengthy but necessary for full working app; included verbatim. */
+
+async function loadRestaurantData() {
+  currentRestaurantId = $('restaurantSelect').value;
+  if (!currentRestaurantId) {
+    $('planningDaysInfo').textContent = 'X';
+    $('subscriptionStatus').textContent = '—';
+    $('paidUntil').textContent = '—';
+    ['payBtn','payBtn2','payBtn3'].forEach(id => { const b=$(id); if(b){ b.disabled=true; b.setAttribute('aria-disabled','true'); }});
+    return;
+  }
+
+  try {
+    showStatusLoading();
+    const r = await fetch(`${API}/restaurants/${currentRestaurantId}/info/`);
+    const data = await r.json();
+
+    $('planningDaysInfo').textContent = data.planning_days;
+    $('paidStatus').textContent = data.has_access ? 'Active' : 'Not active';
+    $('paidUntil').textContent = data.paid_until ? new Date(data.paid_until).toLocaleDateString('en-US') : '—';
+
+    const statusEl = $('subscriptionStatus');
+    if (data.has_access) {
+      statusEl.className = 'status-badge badge-active';
+      statusEl.innerHTML = 'Active';
+      ['payBtn','payBtn2','payBtn3'].forEach(id => { const b=$(id); if(b){ b.style.display='none'; }});
+    } else {
+      statusEl.className = 'status-badge badge-expired';
+      statusEl.innerHTML = 'Not active';
+      ['payBtn','payBtn2','payBtn3'].forEach(id => { const b=$(id); if(b){ b.style.display='inline-block'; }});
+    }
+
+    if (data.paid_until) {
+      const paidDate = new Date(data.paid_until);
+      const now = new Date();
+      const diffDays = Math.ceil((paidDate - now) / (1000*60*60*24));
+      if (diffDays <= 5 && diffDays > 0) {
+        showMessage(`Subscription expires in ${diffDays} day(s)`, 'info');
+      } else if (diffDays <= 0) {
+        showMessage('Subscription expired – renew to use paid features', 'error');
+      }
+    } else {
+      // nothing
+    }
+  } catch (e) {
+    showMessage('Error loading restaurant info', 'error');
+  } finally {
+    clearStatusLoading();
+  }
+}
+
+async function createRestaurant() {
+  const name = $('newRestaurantName').value.trim();
+  const days = Number($('newPlanningDays').value);
+  if (!name || days < 1) return showMessage('Enter name and valid days', 'error');
+
+  try {
+    const resp = await fetch(`${API}/restaurants/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, planning_days: days })
+    });
+    if (!resp.ok) throw new Error(await resp.text() || 'Create failed');
+    const data = await resp.json();
+    $('newRestaurantName').value = '';
+    await loadRestaurants();
+    if ($('restaurantSelect') && data && data.id) {
+      $('restaurantSelect').value = data.id;
+      onRestaurantChange();
+    }
+    showMessage('Restaurant created', 'success');
+  } catch (e) {
+    showMessage('Create failed', 'error');
+  }
+}
+
+async function createRestaurantInline() {
+  const name = $('newRestaurantName_inline').value.trim();
+  const days = Number($('newPlanningDays_inline').value);
+  if (!name || days < 1) return showMessage('Enter name and valid days', 'error');
+  try {
+    const resp = await fetch(`${API}/restaurants/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, planning_days: days })
+    });
+    if (!resp.ok) throw new Error(await resp.text() || 'Create failed');
+    const data = await resp.json();
+    $('newRestaurantName_inline').value = '';
+    await loadRestaurants();
+    if ($('restaurantSelect') && data && data.id) {
+      $('restaurantSelect').value = data.id;
+      onRestaurantChange();
+    }
+    showMessage('Restaurant created', 'success');
+  } catch (e) {
+    showMessage('Create failed', 'error');
+  }
+}
+
+/* Employees / Shifts / Availability / POS / Holidays / Load queues and submit handlers
+   are preserved exactly as before to ensure 1:1 consistency with backend and behavior.
+*/
+
+function openAddEmployeeModal() {
+  if (!$('restaurantSelect')?.value) return showMessage('Select restaurant first', 'error');
+  $('modalEmpName').value = '';
+  $('modalEmpSkills').value = '';
+  openModal('modalAddEmployee');
+}
+
+async function saveNewEmployee() {
+  const name = $('modalEmpName').value.trim();
+  const skillsInput = $('modalEmpSkills').value.trim();
+  if (!name) return showMessage('Name is required', 'error');
+
+  const skills = skillsInput ? skillsInput.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  try {
+    const rid = $('restaurantSelect').value;
+    await fetch(`${API}/restaurants/${rid}/employees/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, skills })
+    });
+    closeModal('modalAddEmployee');
+    showMessage('Employee added', 'success');
+    refreshEmployeesList();
+    populateEmployeeSelects();
+  } catch (e) {
+    showMessage('Add failed', 'error');
+  }
+}
+
+function openAddShiftModal() {
+  if (!$('restaurantSelect')?.value) return showMessage('Select restaurant first', 'error');
+  $('modalShiftName').value = '';
+  $('modalShiftStart').value = '';
+  $('modalShiftEnd').value = '';
+  $('modalShiftSkills').value = '';
+  openModal('modalAddShift');
+}
+
+function parseRequiredSkillsInput(input) {
+  // Accept either JSON (object) or simple CSV "skill:count, skill2" or "skill1,skill2"
+  if (!input) return null;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  // Try JSON first
+  if (trimmed[0] === '{') {
+    try {
+      const obj = JSON.parse(trimmed);
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+        const out = {};
+        for (const k of Object.keys(obj)) {
+          const v = Number(obj[k]);
+          out[String(k).trim()] = Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 1;
+        }
+        return out;
+      }
+    } catch (e) {
+      // fall through to CSV parser
+    }
+  }
+  // CSV / key:value parser
+  const parts = trimmed.split(',');
+  const out = {};
+  for (let p of parts) {
+    p = p.trim();
+    if (!p) continue;
+    // support "skill:count" or "skill=count"
+    let key = p;
+    let val = 1;
+    if (p.indexOf(':') !== -1) {
+      const [k, v] = p.split(':');
+      key = k.trim();
+      const nv = Number((v||'').trim());
+      val = Number.isFinite(nv) ? Math.max(0, Math.floor(nv)) : 1;
+    } else if (p.indexOf('=') !== -1) {
+      const [k, v] = p.split('=');
+      key = k.trim();
+      const nv = Number((v||'').trim());
+      val = Number.isFinite(nv) ? Math.max(0, Math.floor(nv)) : 1;
+    } else {
+      key = p.trim();
+      val = 1;
+    }
+    if (key) out[key] = (out[key] || 0) + val;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+async function saveNewShift() {
+  const name = $('modalShiftName').value.trim();
+  const start_time = $('modalShiftStart').value || null;
+  const end_time = $('modalShiftEnd').value || null;
+  const skillsRaw = $('modalShiftSkills') ? $('modalShiftSkills').value.trim() : '';
+  if (!name) return showMessage('Shift name required', 'error');
+
+  // parse required_skills input
+  let required_skills = null;
+  try {
+    required_skills = parseRequiredSkillsInput(skillsRaw);
+  } catch (e) {
+    required_skills = null;
+  }
+
+  try {
+    const rid = $('restaurantSelect').value;
+    const payload = { name, start_time, end_time };
+    if (required_skills && Object.keys(required_skills).length) payload.required_skills = required_skills;
+
+    await fetch(`${API}/restaurants/${rid}/shifts/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    closeModal('modalAddShift');
+    showMessage('Shift added', 'success');
+    refreshShiftsList();
+    populateShiftDependentControls();
+  } catch (e) {
+    showMessage('Add failed', 'error');
+  }
+}
+
+/* Queues */
+let posQueue = [];
+let holidayQueue = [];
+let loadQueue = [];
+let availQueue = [];
+
+async function populateShiftDependentControls() {
+  const rid = $('restaurantSelect')?.value;
+  const shiftSelectIds = ['posShift', 'loadShift', 'availShift'];
+  shiftSelectIds.forEach(id => {
+    const el = $(id);
+    if (el) { el.innerHTML = '<option value="">— select shift —</option>'; }
+  });
+  if (!rid) return;
+  try {
+    const r = await fetch(`${API}/restaurants/${rid}/shifts/`);
+    if (!r.ok) return;
+    const shifts = await r.json();
+    shifts.forEach(s => {
+      shiftSelectIds.forEach(id => {
+        const el = $(id);
+        if (!el) return;
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.id} — ${s.name}`;
+        el.appendChild(opt);
+      });
+    });
+    refreshDownloadRestaurants();
+    refreshEmployeesList();
+    refreshShiftsList();
+    populateEmployeeSelects();
+  } catch (e) {
+    // ignore
+  }
+}
+
+async function populateEmployeeSelects() {
+  const rid = $('restaurantSelect')?.value;
+  const el = $('availEmployee');
+  if (!el) return;
+  el.innerHTML = '<option value="">— select employee —</option>';
+  if (!rid) return;
+  try {
+    const r = await fetch(`${API}/restaurants/${rid}/employees/`);
+    if (!r.ok) return;
+    const items = await r.json();
+    items.forEach(emp => {
+      const opt = document.createElement('option');
+      opt.value = emp.id;
+      opt.textContent = `${emp.id} — ${emp.name}`;
+      el.appendChild(opt);
+    });
+  } catch (e) {
+    // ignore
+  }
+}
+
+/* POS queue logic */
+function addPosRow() {
+  const date = $('posDate').value;
+  const shift_id = $('posShift').value;
+  const covers = Number($('posCovers').value) || 0;
+  const revenue = $('posRevenue').value ? Number($('posRevenue').value) : null;
+  if (!currentRestaurantId) return showMessage('Select restaurant first', 'error');
+  if (!date || !shift_id) return showMessage('Date and shift required', 'error');
+  posQueue.push({ date, shift_id: Number(shift_id), covers: Number(covers), revenue });
+  renderPosQueue();
+  $('posCovers').value = '10';
+  $('posRevenue').value = '';
+}
+function renderPosQueue() {
+  const out = $('posQueue');
+  out.innerHTML = '';
+  posQueue.forEach((p, idx) => {
+    const div = document.createElement('div');
+    div.className = 'list-row';
+    div.innerHTML = `<div><strong>${p.date}</strong> • shift ${p.shift_id} • covers ${p.covers}${p.revenue!=null?(' • $'+p.revenue):''}</div>
+      <div style="display:flex; gap:8px;">
+        <button class="apply-btn" onclick="removePos(${idx})">Remove</button>
+      </div>`;
+    out.appendChild(div);
+  });
+}
+function removePos(idx) { posQueue.splice(idx,1); renderPosQueue(); }
+function clearPosQueue() { posQueue = []; renderPosQueue(); showMessage('POS queue cleared', 'info'); }
+
+async function submitPosData() {
+  if (!currentRestaurantId) return showMessage('Select restaurant first', 'error');
+  if (!posQueue.length) return showMessage('No POS entries queued', 'error');
+  try {
+    const resp = await fetch(`${API}/restaurants/${currentRestaurantId}/pos_data/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(posQueue.map(p => ({ date: p.date, shift_id: p.shift_id, covers: p.covers, revenue: p.revenue })))
+    });
+    if (!resp.ok) throw new Error(await resp.text() || 'POS upload failed');
+    const data = await resp.json();
+    posQueue = [];
+    renderPosQueue();
+    showMessage(`POS data ingested (${data.ingested})`, 'success');
+  } catch (e) {
+    showMessage(`POS upload failed: ${e.message}`, 'error');
+  }
+}
+
+/* Holidays */
+function addHolidayRow() {
+  const date = $('holidayDate').value;
+  const name = $('holidayName').value.trim();
+  if (!date) return showMessage('Date required', 'error');
+  holidayQueue.push({ date, name: name || null });
+  renderHolidayQueue();
+  $('holidayDate').value = '';
+  $('holidayName').value = '';
+}
+function renderHolidayQueue() {
+  const out = $('holidayQueue');
+  out.innerHTML = '';
+  holidayQueue.forEach((h, idx) => {
+    const div = document.createElement('div');
+    div.className = 'list-row';
+    div.innerHTML = `<div><strong>${h.date}</strong> ${h.name?('• '+h.name):''}</div>
+      <div style="display:flex; gap:8px;">
+        <button class="apply-btn" onclick="removeHoliday(${idx})">Remove</button>
+      </div>`;
+    out.appendChild(div);
+  });
+}
+function removeHoliday(idx) { holidayQueue.splice(idx,1); renderHolidayQueue(); }
+function clearHolidayQueue() { holidayQueue = []; renderHolidayQueue(); showMessage('Holidays queue cleared', 'info'); }
+async function submitHolidays() {
+  if (!holidayQueue.length) return showMessage('No holidays queued', 'error');
+  const rid = currentRestaurantId || 0;
+  try {
+    const resp = await fetch(`${API}/restaurants/${rid}/holidays/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(holidayQueue.map(h => ({ date: h.date, name: h.name })))
+    });
+    if (!resp.ok) throw new Error(await resp.text() || 'Holidays upload failed');
+    const data = await resp.json();
+    holidayQueue = [];
+    renderHolidayQueue();
+    showMessage(`Holidays ingested (${data.ingested})`, 'success');
+  } catch (e) {
+    showMessage(`Holidays upload failed: ${e.message}`, 'error');
+  }
+}
+
+/* Load entries */
+function addLoadRow() {
+  const day = Number($('loadDay').value);
+  const shift_id = $('loadShift').value;
+  const required = Number($('loadRequired').value) || 0;
+  if (!currentRestaurantId) return showMessage('Select restaurant first', 'error');
+  if (isNaN(day) || !shift_id) return showMessage('Day and shift required', 'error');
+  loadQueue.push({ day, shift_id: Number(shift_id), required });
+  renderLoadQueue();
+  $('loadRequired').value = '1';
+}
+function renderLoadQueue() {
+  const out = $('loadQueue');
+  out.innerHTML = '';
+  loadQueue.forEach((l, idx) => {
+    const div = document.createElement('div');
+    div.className = 'list-row';
+    div.innerHTML = `<div>Day ${l.day} • shift ${l.shift_id} • required ${l.required}</div>
+      <div style="display:flex; gap:8px;">
+        <button class="apply-btn" onclick="removeLoad(${idx})">Remove</button>
+      </div>`;
+    out.appendChild(div);
+  });
+}
+function removeLoad(idx) { loadQueue.splice(idx,1); renderLoadQueue(); }
+function clearLoadQueue() { loadQueue = []; renderLoadQueue(); showMessage('Load queue cleared', 'info'); }
+async function submitLoadBatch() {
+  if (!currentRestaurantId) return showMessage('Select restaurant first', 'error');
+  if (!loadQueue.length) return showMessage('No load entries queued', 'error');
+  try {
+    const resp = await fetch(`${API}/load/${currentRestaurantId}/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(loadQueue.map(l => ({ day: l.day, shift_id: l.shift_id, required: l.required })))
+    });
+    if (!resp.ok) throw new Error(await resp.text() || 'Load submit failed');
+    const data = await resp.json();
+    loadQueue = [];
+    renderLoadQueue();
+    showMessage('Load updated', 'success');
+  } catch (e) {
+    showMessage(`Load update failed: ${e.message}`, 'error');
+  }
+}
+
+/* Availability */
+function addAvailabilityRow() {
+  const employee_id = $('availEmployee').value;
+  const day = Number($('availDay').value);
+  const shift_id = $('availShift').value;
+  if (!currentRestaurantId) return showMessage('Select restaurant first', 'error');
+  if (!employee_id || isNaN(day) || !shift_id) return showMessage('Employee, day and shift required', 'error');
+  availQueue.push({ employee_id: Number(employee_id), day: Number(day), shift_id: Number(shift_id) });
+  renderAvailQueue();
+  $('availDay').value = '0';
+}
+function renderAvailQueue() {
+  const out = $('availQueue');
+  out.innerHTML = '';
+  availQueue.forEach((a, idx) => {
+    const div = document.createElement('div');
+    div.className = 'list-row';
+    div.innerHTML = `<div>Employee ${a.employee_id} • Day ${a.day} • Shift ${a.shift_id}</div>
+      <div style="display:flex; gap:8px;">
+        <button class="apply-btn" onclick="removeAvail(${idx})">Remove</button>
+      </div>`;
+    out.appendChild(div);
+  });
+}
+function removeAvail(idx) { availQueue.splice(idx,1); renderAvailQueue(); }
+function clearAvailQueue() { availQueue = []; renderAvailQueue(); showMessage('Availability queue cleared', 'info'); }
+async function submitAvailabilityBatch() {
+  if (!currentRestaurantId) return showMessage('Select restaurant first', 'error');
+  if (!availQueue.length) return showMessage('No availability queued', 'error');
+  let success = 0, failed = 0;
+  for (const a of availQueue) {
+    try {
+      const resp = await fetch(`${API}/availability/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employee_id: a.employee_id, day: a.day, shift_id: a.shift_id })
+      });
+      if (resp.ok) success++; else failed++;
+    } catch (e) { failed++; }
+  }
+  availQueue = [];
+  renderAvailQueue();
+  showMessage(`Availability submitted: ${success} ok, ${failed} failed`, failed ? 'error' : 'success');
+}
+
+/* Employees & Shifts lists */
+async function refreshEmployeesList() {
+  const rid = $('restaurantSelect')?.value;
+  const out = $('employeesList');
+  if (!out) return;
+  out.innerHTML = '';
+  if (!rid) return;
+  showSkeleton('employeesList', 3);
+  try {
+    const r = await fetch(`${API}/restaurants/${rid}/employees/`);
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    hideSkeleton('employeesList');
+    if (!data.length) {
+      out.innerHTML = '<div class="small">No employees</div>';
+      return;
+    }
+    data.forEach(e => {
+      const div = document.createElement('div');
+      div.className = 'list-row';
+      div.innerHTML = `<div><strong>${e.name}</strong><div class="small">Skills: ${(e.skills||[]).join(', ')}</div></div>`;
+      out.appendChild(div);
+    });
+    populateEmployeeSelects();
+  } catch (e) {
+    hideSkeleton('employeesList');
+    out.innerHTML = '<div class="small">Failed to load employees</div>';
+  }
+}
+async function refreshShiftsList() {
+  const rid = $('restaurantSelect')?.value;
+  const out = $('shiftsList');
+  if (!out) return;
+  out.innerHTML = '';
+  if (!rid) return;
+  showSkeleton('shiftsList', 3);
+  try {
+    const r = await fetch(`${API}/restaurants/${rid}/shifts/`);
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    hideSkeleton('shiftsList');
+    if (!data.length) {
+      out.innerHTML = '<div class="small">No shifts</div>';
+      return;
+    }
+    data.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'list-row';
+      const timePart = (s.start_time ? ` (${s.start_time}${s.end_time ? '–' + s.end_time : ''})` : '');
+      div.innerHTML = `<div><strong>${s.name}${timePart}</strong><div class="small">id: ${s.id}</div></div>`;
+      out.appendChild(div);
+    });
+    populateShiftDependentControls();
+  } catch (e) {
+    hideSkeleton('shiftsList');
+    out.innerHTML = '<div class="small">Failed to load shifts</div>';
+  }
+}
+
+/* Save selected restaurant to localStorage and sync downloadSelect */
+function onRestaurantChange() {
+  const sel = $('restaurantSelect');
+  if (!sel) return;
+  const val = sel.value;
+  localStorage.setItem(SELECTED_KEY, val || '');
+  currentRestaurantId = val || null;
+  if ($('downloadRestaurantSelect')) $('downloadRestaurantSelect').value = val;
+  refreshEmployeesList();
+  refreshShiftsList();
+  populateShiftDependentControls();
+  loadRestaurantData();
+  refreshDownloadRestaurants();
+}
+
+/* AI forecast/hints/suggestions and schedule generation preserved */
+async function loadAIForecast() {
+  const rid = $('restaurantSelect')?.value;
+  if (!rid) return showMessage('Select restaurant first', 'error');
+  showSkeleton('aiForecastOut', 4);
+  try {
+    const r = await fetch(`${API}/restaurants/${rid}/ai/forecast_load/`);
+    if (r.status === 403) {
+      const text = await r.text();
+      hideSkeleton('aiForecastOut');
+      return showMessage(`AI forecast requires subscription: ${text}`, 'error');
+    }
+    if (!r.ok) throw new Error(await r.text() || 'Forecast failed');
+    const data = await r.json();
+    hideSkeleton('aiForecastOut');
+    const out = $('aiForecastOut');
+    out.innerHTML = `<div class="small">Predictions for restaurant ${rid}:</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'schedule-grid';
+    data.predictions.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'schedule-card';
+      card.innerHTML = `<div style="font-weight:700">Day ${p.day+1} • Shift ${p.shift_id}</div>
+        <div class="small">Date: ${p.date}</div>
+        <div class="small">Predicted covers: ${p.predicted_covers}</div>
+        <div class="small">Recommended staff: ${p.recommended}</div>
+        <div class="small" style="margin-top:6px">${p.reason}</div>`;
+      grid.appendChild(card);
+    });
+    out.appendChild(grid);
+  } catch (e) {
+    hideSkeleton('aiForecastOut');
+    showMessage(`Forecast failed: ${e.message}`, 'error');
+  }
+}
+async function loadAIHints() {
+  const rid = $('restaurantSelect')?.value;
+  if (!rid) return showMessage('Select restaurant first', 'error');
+  showSkeleton('aiHintsOut', 3);
+  try {
+    const r = await fetch(`${API}/restaurants/${rid}/ai/hints/`);
+    if (r.status === 403) {
+      const text = await r.text();
+      hideSkeleton('aiHintsOut');
+      return showMessage(`AI hints require subscription: ${text}`, 'error');
+    }
+    if (!r.ok) throw new Error(await r.text() || 'Hints failed');
+    const data = await r.json();
+    hideSkeleton('aiHintsOut');
+    const out = $('aiHintsOut');
+    out.innerHTML = `<div class="small">AI hints for restaurant ${rid}:</div>`;
+    data.hints.forEach(h => {
+      const div = document.createElement('div');
+      div.className = 'list-row';
+      div.innerHTML = `<div><strong>${h.level.toUpperCase()}</strong> ${h.message}</div>`;
+      out.appendChild(div);
+    });
+    if (!data.hints || data.hints.length === 0) out.innerHTML += '<div class="small">No hints</div>';
+  } catch (e) {
+    hideSkeleton('aiHintsOut');
+    showMessage(`Hints failed: ${e.message}`, 'error');
+  }
+}
+async function getAISuggestions() {
+  const rid = $('restaurantSelect')?.value;
+  if (!rid) return showMessage('Select restaurant first', 'error');
+  showSkeleton('aiSuggestionsOut', 3);
+  try {
+    const url = `${API}/restaurants/${rid}/ai/suggest_schedule/?max_suggestions=200`;
+    const r = await fetch(url, { method: 'POST' });
+    if (r.status === 403) {
+      const text = await r.text();
+      hideSkeleton('aiSuggestionsOut');
+      return showMessage(`AI suggestions require subscription: ${text}`, 'error');
+    }
+    if (!r.ok) throw new Error(await r.text() || 'Suggestions failed');
+    const data = await r.json();
+    hideSkeleton('aiSuggestionsOut');
+    const out = $('aiSuggestionsOut');
+    out.innerHTML = `<div class="small">AI suggestions for restaurant ${rid}:</div>`;
+    data.suggestions.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'list-row';
+      div.innerHTML = `<div>Day ${s.day+1} • Shift ${s.shift_id} • recommended ${s.required_recommended} • shortage ${s.shortage}</div>`;
+      out.appendChild(div);
+    });
+    if (!data.suggestions || data.suggestions.length === 0) out.innerHTML += '<div class="small">No suggestions</div>';
+  } catch (e) {
+    hideSkeleton('aiSuggestionsOut');
+    showMessage(`AI suggestions failed: ${e.message}`, 'error');
+  }
+}
+
+async function generateSchedule() {
+  const rid = $('restaurantSelect')?.value;
+  if (!rid) return showMessage('Select restaurant first', 'error');
+  try {
+    const resp = await fetch(`${API}/restaurants/${rid}/generate_schedule/`, { method: 'POST' });
+    if (!resp.ok) {
+      const t = await resp.text();
+      throw new Error(t || 'Generate failed');
+    }
+    const data = await resp.json();
+    showMessage(`Schedule generated (id ${data.schedule_id})`, 'success');
+    await viewSchedule(data.schedule_id);
+  } catch (e) {
+    showMessage(`Generate failed: ${e.message}`, 'error');
+  }
+}
+async function viewScheduleById() {
+  const sid = Number($('viewScheduleId').value);
+  if (!sid) return showMessage('Enter schedule ID', 'error');
+  await viewSchedule(sid);
+}
+async function viewSchedule(schedule_id) {
+  try {
+    const out = $('scheduleDisplay');
+    if (out) {
+      out.innerHTML = '';
+      showSkeleton('scheduleDisplay', 4);
+    }
+    const resp = await fetch(`${API}/schedules/${schedule_id}/`);
+    if (!resp.ok) {
+      const t = await resp.text();
+      hideSkeleton('scheduleDisplay');
+      throw new Error(t || 'View failed');
+    }
+    const data = await resp.json();
+    hideSkeleton('scheduleDisplay');
+    const out2 = $('scheduleDisplay');
+    out2.innerHTML = `<div class="small">Schedule ${data.schedule_id} — ${data.items.length} items</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'schedule-grid';
+    data.items.forEach((it, idx) => {
+      const card = document.createElement('div');
+      card.className = 'schedule-card';
+      card.innerHTML = `<div style="font-weight:700">${it.shift_name} — Day ${it.day+1}</div>
+        <div class="small">Employee: ${it.employee_name}</div>
+        <div class="small">Forecast: ${it.forecast}</div>
+        <div class="small">Confidence: ${it.confidence}</div>
+        <div class="small">Skill match: ${it.skill_match ? 'yes' : 'no'}</div>
+        <div class="small" style="margin-top:6px">${(it.reasons||[]).join('; ')}</div>
+        <div style="margin-top:8px; display:flex; gap:8px;">
+          <button class="apply-btn" onclick="applyInstruction(${schedule_id}, ${it.schedule_index})">Apply</button>
+          <button class="apply-btn" onclick="downloadSingleScheduleRow(${schedule_id}, ${it.schedule_index})">Export row</button>
+        </div>`;
+      grid.appendChild(card);
+    });
+    out2.appendChild(grid);
+    $('viewScheduleId').value = schedule_id;
+    $('scheduleStatus').textContent = `Viewing schedule ${schedule_id}`;
+  } catch (e) {
+    hideSkeleton('scheduleDisplay');
+    showMessage(`View schedule failed: ${e.message}`, 'error');
+  }
+}
+
+async function applyInstruction(schedule_id, index) {
+  try {
+    const resp = await fetch(`${API}/schedules/${schedule_id}/apply/${index}`, { method: 'POST' });
+    if (!resp.ok) {
+      const t = await resp.text();
+      throw new Error(t || 'Apply failed');
+    }
+    const data = await resp.json();
+    $('applyInstructions').textContent = data.instructions || JSON.stringify(data, null, 2);
+    openModal('modalApplyInstructions');
+  } catch (e) {
+    showMessage(`Apply failed: ${e.message}`, 'error');
+  }
+}
+
+function downloadSingleScheduleRow(schedule_id, index) {
+  fetch(`${API}/schedules/${schedule_id}/`).then(r => {
+    if (!r.ok) throw new Error('Failed to fetch schedule');
+    return r.json();
+  }).then(data => {
+    const item = data.items[index];
+    if (!item) return showMessage('Item not found', 'error');
+    const headers = ["schedule_id","index","day","shift_id","shift_name","employee_name","forecast","confidence","reasons"];
+    const row = [
+      schedule_id,
+      index,
+      item.day + 1,
+      item.shift_id,
+      item.shift_name,
+      item.employee_name,
+      `"${item.forecast}"`,
+      item.confidence,
+      `"${(item.reasons||[]).join('; ')}"`
+    ];
+    const csv = headers.join(",") + "\n" + row.join(",") + "\n";
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `schedule_${schedule_id}_row_${index}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showMessage('Row exported', 'success');
+  }).catch(e => showMessage(`Export failed: ${e.message}`, 'error'));
+}
+
+/* Export endpoints */
+async function downloadEmployeesCSV() {
+  const rid = $('downloadRestaurantSelect')?.value || '';
+  if (!rid) return showMessage('Select restaurant first', 'error');
+  try {
+    const r = await fetch(`${API}/restaurants/${rid}/export/employees_csv/`);
+    if (r.status === 403) throw new Error('Subscription required');
+    if (!r.ok) throw new Error(await r.text() || 'Export failed');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `restaurant_${rid}_employees.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showMessage('Employees CSV downloaded', 'success');
+  } catch (e) { showMessage(`Export failed: ${e.message}`, 'error'); }
+}
+async function downloadShiftsCSV() {
+  const rid = $('downloadRestaurantSelect')?.value || '';
+  if (!rid) return showMessage('Select restaurant first', 'error');
+  try {
+    const r = await fetch(`${API}/restaurants/${rid}/export/shifts_csv/`);
+    if (r.status === 403) throw new Error('Subscription required');
+    if (!r.ok) throw new Error(await r.text() || 'Export failed');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `restaurant_${rid}_shifts.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showMessage('Shifts CSV downloaded', 'success');
+  } catch (e) { showMessage(`Export failed: ${e.message}`, 'error'); }
+}
+async function downloadLatestScheduleCSV() {
+  const rid = $('downloadRestaurantSelect')?.value || '';
+  if (!rid) return showMessage('Select restaurant first', 'error');
+  try {
+    const r = await fetch(`${API}/restaurants/${rid}/export/latest_schedule_csv/`);
+    if (r.status === 403) throw new Error('Subscription required');
+    if (!r.ok) throw new Error(await r.text() || 'Export failed');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `restaurant_${rid}_latest_schedule.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showMessage('Latest schedule CSV downloaded', 'success');
+  } catch (e) { showMessage(`Export failed: ${e.message}`, 'error'); }
+}
+async function downloadAISuggestionsCSV() {
+  const rid = $('downloadRestaurantSelect')?.value || '';
+  if (!rid) return showMessage('Select restaurant first', 'error');
+  try {
+    const r = await fetch(`${API}/restaurants/${rid}/export/ai_suggestions_csv/`);
+    if (r.status === 403) throw new Error('Subscription required');
+    if (!r.ok) throw new Error(await r.text() || 'Export failed');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `restaurant_${rid}_ai_suggestions.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showMessage('AI suggestions CSV downloaded', 'success');
+  } catch (e) { showMessage(`Export failed: ${e.message}`, 'error'); }
+}
+
+/* ===== Guided Tour: robust, non-destructive implementation ===== */
+const tourSteps = [
+  { sel: '#restaurantSelect', msg: 'Start by selecting a restaurant here. You can also create a new restaurant below.' },
+  { sel: '.card .card-title', msg: 'Cards contain the primary controls for each feature area. Use Quick Actions to refresh lists.' },
+  { sel: '[data-tab="shifts"]', msg: 'Add shifts and set employee availability in the Shifts tab.' },
+  { sel: '[data-tab="ai"]', msg: 'AI Forecast uses historical POS and holidays to recommend staff levels. Requires an active subscription.' },
+  { sel: '#payBtn', msg: 'Use these buttons to subscribe (opens PayPal). Make sure you accept Terms & Privacy first.' }
+];
+let tourIndex = 0;
+let tourRunning = false;
+let tourKeyHandler = null;
+
+function startTour() {
+  try {
+    if (tourRunning) return; // avoid double-start
+    tourRunning = true;
+    tourIndex = 0;
+    showTourStep();
+    const overlay = $('tourOverlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
+      // Enable pointer events so overlay captures touches on mobile (Safari/Chrome iOS/Android)
+      overlay.style.pointerEvents = 'auto';
+    }
+    // prevent body scroll while tour is active
+    try { document.body.dataset._prevOverflow = document.body.style.overflow || ''; document.body.style.overflow = 'hidden'; } catch (e) {}
+    // ensure buttons exist and attach handlers (idempotent)
+    const prev = $('tourPrev'), next = $('tourNext'), close = $('tourClose');
+    if (prev) { prev.removeEventListener('click', prevTourStep); prev.addEventListener('click', prevTourStep); }
+    if (next) { next.removeEventListener('click', nextTourStep); next.addEventListener('click', nextTourStep); }
+    if (close) { close.removeEventListener('click', endTour); close.addEventListener('click', endTour); }
+    // keyboard support (escape to close, arrows to navigate)
+    tourKeyHandler = function(e) {
+      if (!tourRunning) return;
+      if (e.key === 'Escape') { e.preventDefault(); endTour(); return; }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); nextTourStep(); return; }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prevTourStep(); return; }
+    };
+    document.addEventListener('keydown', tourKeyHandler);
+    // For mobile devices, ensure the overlay receives touch gestures and the tooltip controls are touch-friendly.
+  } catch (e) {
+    // fail silently — do not break app
+    tourRunning = false;
+    const overlay = $('tourOverlay');
+    if (overlay) overlay.style.display = 'none';
+    try { document.body.style.overflow = document.body.dataset._prevOverflow || ''; } catch (err) {}
+  }
+}
+
+/*
+  showTourStep adjustments:
+  - Scroll target into view before computing rect to ensure correct coordinates.
+  - Use rect coordinates directly (no page scroll offsets) since overlay is fixed.
+  - Ensure tooltip width is clamped to viewport and repositioned if it would overflow.
+  - Use requestAnimationFrame where appropriate to allow layout to settle (helps Chrome).
+*/
+function showTourStep() {
+  try {
+    const step = tourSteps[tourIndex];
+    if (!step) return;
+    const el = document.querySelector(step.sel);
+    const highlight = $('tourHighlight');
+    const tooltip = $('tourTooltip');
+    const content = $('tourContent');
+    if (!tooltip || !content) return;
+    content.innerHTML = `<div>${step.msg}</div>`;
+    tooltip.style.display = 'block';
+    tooltip.style.opacity = '1';
+    tooltip.style.maxWidth = 'calc(100% - 24px)'; // ensure fits small viewports
+
+    // If there is a target element, try to bring it into view so bounding rect is meaningful.
+    if (el) {
+      try {
+        // center the element in viewport to increase likelihood tooltip fits
+        el.scrollIntoView({behavior: 'auto', block: 'center', inline: 'center'});
+      } catch (e) {
+        // ignore scroll failures
+      }
+    }
+
+    // Use requestAnimationFrame to allow browser to update layout after scrollIntoView
+    requestAnimationFrame(() => {
+      try {
+        const rect = el ? el.getBoundingClientRect() : null;
+
+        // If element has valid rect dimensions, position highlight and tooltip relative to viewport.
+        if (rect && rect.width > 0 && rect.height > 0) {
+          if (highlight) {
+            highlight.style.display = 'block';
+            // overlay is fixed, so rect coordinates are already relative to viewport. Do not add scroll offsets.
+            highlight.style.left = `${Math.max(8, rect.left - 8)}px`;
+            highlight.style.top = `${Math.max(8, rect.top - 8)}px`;
+            highlight.style.width = `${Math.min(window.innerWidth - 16, rect.width + 16)}px`;
+            highlight.style.height = `${Math.min(window.innerHeight - 16, rect.height + 16)}px`;
+          }
+
+          // Determine tooltip preferred position: right of element if space, otherwise below, otherwise centered.
+          const tooltipWidthGuess = Math.min(420, Math.max(200, tooltip.offsetWidth || 300));
+          const spaceRight = window.innerWidth - rect.right;
+          const spaceLeft = rect.left;
+          const spaceBelow = window.innerHeight - rect.bottom;
+          const spaceAbove = rect.top;
+
+          let left, top;
+          // Prefer right
+          if (spaceRight > tooltipWidthGuess + 24) {
+            left = rect.right + 12;
+            top = rect.top;
+          } else if (spaceBelow > 160) {
+            // prefer below
+            left = Math.min(Math.max(12, rect.left), window.innerWidth - tooltipWidthGuess - 12);
+            top = rect.bottom + 12;
+          } else if (spaceLeft > tooltipWidthGuess + 24) {
+            // place to left
+            left = Math.max(12, rect.left - tooltipWidthGuess - 12);
+            top = rect.top;
+          } else {
+            // fallback: center horizontally, clamp vertically
+            left = Math.max(12, (window.innerWidth - tooltipWidthGuess) / 2);
+            top = Math.max(12, Math.min(window.innerHeight - 12 - 160, rect.top));
+          }
+
+          // Clamp left/top so tooltip is fully visible
+          const maxLeft = Math.max(12, window.innerWidth - 12 - tooltipWidthGuess);
+          if (left > maxLeft) left = maxLeft;
+          if (left < 12) left = 12;
+          if (top < 12) top = 12;
+          if (top + 120 > window.innerHeight - 12) { // attempt to keep tooltip in viewport vertically
+            top = Math.max(12, window.innerHeight - 12 - 140);
+          }
+
+          tooltip.style.left = `${Math.round(left)}px`;
+          tooltip.style.top = `${Math.round(top)}px`;
+          tooltip.style.transform = 'none';
+          // ensure tooltip max width fits remaining viewport
+          tooltip.style.maxWidth = `${Math.min(420, window.innerWidth - 24)}px`;
+        } else {
+          // fallback: center tooltip
+          if (highlight) highlight.style.display = 'none';
+          tooltip.style.left = '50%';
+          tooltip.style.top = '50%';
+          tooltip.style.transform = 'translate(-50%, -50%)';
+        }
+
+        // ensure tooltip is reachable by keyboard (Chrome): set tabindex and focus without scrolling
+        try { tooltip.tabIndex = 0; tooltip.focus({ preventScroll: true }); } catch (e) {}
+
+        // update buttons state
+        try {
+          const prev = $('tourPrev'), next = $('tourNext');
+          if (prev) prev.disabled = tourIndex === 0;
+          if (next) next.textContent = tourIndex === (tourSteps.length - 1) ? 'Finish' : 'Next';
+        } catch (e) {}
+      } catch (e) {
+        // swallow per robustness requirement
+      }
+    });
+  } catch (e) {
+    // do nothing — ensure no exceptions bubble
+  }
+}
+
+function nextTourStep() {
+  try {
+    if (tourIndex < tourSteps.length - 1) {
+      tourIndex++;
+      showTourStep();
+    } else {
+      endTour();
+    }
+  } catch (e) {}
+}
+
+function prevTourStep() {
+  try {
+    if (tourIndex > 0) {
+      tourIndex--;
+      showTourStep();
+    }
+  } catch (e) {}
+}
+
+function endTour() {
+  try {
+    tourRunning = false;
+    const overlay = $('tourOverlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+      // restore pointer-events to default (none)
+      overlay.style.pointerEvents = 'none';
+    }
+    const highlight = $('tourHighlight');
+    if (highlight) { highlight.style.display = 'none'; }
+    const tooltip = $('tourTooltip');
+    if (tooltip) { tooltip.style.display = 'none'; }
+    // restore body overflow
+    try { document.body.style.overflow = document.body.dataset._prevOverflow || ''; } catch (e) {}
+    // remove keyboard handler
+    if (tourKeyHandler) {
+      document.removeEventListener('keydown', tourKeyHandler);
+      tourKeyHandler = null;
+    }
+    // remove click listeners attached (they were idempotently attached)
+    try { $('tourPrev')?.removeEventListener('click', prevTourStep); } catch(e){}
+    try { $('tourNext')?.removeEventListener('click', nextTourStep); } catch(e){}
+    try { $('tourClose')?.removeEventListener('click', endTour); } catch(e){}
+  } catch (e) {
+    // swallow errors
+  }
+}
+
+/* ===== Additional helper functions added to restore missing features (non-destructive) ===== */
+
+function goToMainApp() {
+  try {
+    document.querySelectorAll('nav button').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+    const dash = document.querySelector('nav button[data-tab="dashboard"]');
+    if (dash) { dash.classList.add('active'); dash.setAttribute('aria-pressed','true'); }
+    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+    const main = document.getElementById('tab-dashboard');
+    if (main) main.style.display = 'block';
+    // refresh dashboard lists to reflect current state
+    try { refreshEmployeesList(); refreshShiftsList(); } catch (e) {}
+  } catch (e) {
+    showMessage('Не удалось перейти на Dashboard', 'error');
+  }
+}
+
+function setDownloadButtonsEnabled(enabled) {
+  const ids = ['btnDL_Employees','btnDL_Shifts','btnDL_Schedule','btnDL_AI'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = !enabled;
+    el.setAttribute('aria-disabled', String(!enabled));
+    el.classList.toggle('disabled', !enabled);
+  });
+}
+
+function updateDirectLinks(rid) {
+  const base = API;
+  const links = {
+    linkEmployeesCSV: rid ? `${base}/restaurants/${rid}/export/employees_csv/` : '#',
+    linkShiftsCSV: rid ? `${base}/restaurants/${rid}/export/shifts_csv/` : '#',
+    linkLatestScheduleCSV: rid ? `${base}/restaurants/${rid}/export/latest_schedule_csv/` : '#',
+    linkAISuggestionsCSV: rid ? `${base}/restaurants/${rid}/export/ai_suggestions_csv/` : '#'
+  };
+  Object.keys(links).forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.href = links[id];
+    el.setAttribute('aria-disabled', String(!rid));
+    el.style.pointerEvents = rid ? 'auto' : 'none';
+    el.style.opacity = rid ? '1' : '0.5';
+  });
+}
+
+async function refreshDownloadRestaurants() {
+  await loadRestaurants();
+  const rid = $('downloadRestaurantSelect')?.value;
+  if (!rid) {
+    $('downloadRestaurantInfo').textContent = '';
+    setDownloadButtonsEnabled(false);
+    updateDirectLinks(null);
+    return;
+  }
+  try {
+    const r = await fetch(`${API}/restaurants/${rid}/info/`);
+    if (!r.ok) throw new Error();
+    const info = await r.json();
+    $('downloadRestaurantInfo').textContent = `Planning days: ${info.planning_days}. Valid until: ${info.paid_until ? new Date(info.paid_until).toLocaleDateString() : 'not active'}`;
+    setDownloadButtonsEnabled(!!info.has_access);
+    updateDirectLinks(rid);
+    if (!info.has_access) showMessage('Export requires active subscription', 'error');
+  } catch {
+    $('downloadRestaurantInfo').textContent = '';
+    setDownloadButtonsEnabled(false);
+    updateDirectLinks(null);
+  }
+}
+
+async function exportEmployeesFromMain() {
+  const rid = $('restaurantSelect')?.value;
+  if (!rid) return showMessage('Select restaurant first', 'error');
+  try {
+    const infoResp = await fetch(`${API}/restaurants/${rid}/info/`);
+    if (!infoResp.ok) throw new Error();
+    const info = await infoResp.json();
+    if (!info.has_access) return showMessage('Export requires active subscription', 'error');
+    const r = await fetch(`${API}/restaurants/${rid}/export/employees_csv/`);
+    if (r.status === 403) throw new Error('Subscription required');
+    if (!r.ok) throw new Error(await r.text() || 'Export failed');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `restaurant_${rid}_employees.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showMessage('Employees CSV downloaded', 'success');
+  } catch (e) {
+    showMessage(`Export failed: ${e.message}`, 'error');
+  }
+}
+
+/* ===== Payment and legal helpers (ADDED) =====
+   Implemented to provide full parity with backend /restaurants/{id}/pay/ endpoint.
+   - paySubscription(amount, months): initiates payment by POSTing PaymentConsent and opening PayPal approval_url.
+   - openTerms/openPrivacy: open the legal pages in a new tab.
+   Notes:
+   - The backend expects JSON fields: accept_terms, accept_privacy, amount (optional), months (optional).
+   - To maximize compatibility with popup blockers (Safari/Chrome), we open a blank window synchronously on user click
+     then navigate it to PayPal approval_url after the server response.
+*/
+
+function openTerms() {
+  try {
+    window.open('https://example.com/terms', '_blank', 'noopener,noreferrer');
+  } catch (e) { /* silent fallback */ }
+}
+function openPrivacy() {
+  try {
+    window.open('https://example.com/privacy', '_blank', 'noopener,noreferrer');
+  } catch (e) { /* silent fallback */ }
+}
+
+async function paySubscription(amount = 30, months = 1) {
+  try {
+    const rid = $('restaurantSelect')?.value;
+    if (!rid) return showMessage('Select restaurant first', 'error');
+
+    // Check acceptance of legal terms
+    const acceptTerms = !!document.getElementById('acceptTerms')?.checked;
+    const acceptPrivacy = !!document.getElementById('acceptPrivacy')?.checked;
+    if (!acceptTerms || !acceptPrivacy) return showMessage('You must accept Terms & Privacy', 'error');
+
+    // Open a blank popup synchronously to avoid popup blockers in Safari/Chrome iOS/Android.
+    // We'll navigate it to the PayPal approval_url once we receive it.
+    let popup = null;
+    try {
+      popup = window.open('', '_blank', 'noopener,noreferrer');
+      if (popup) {
+        // Show a small interim message while we obtain approval URL
+        try { popup.document.title = 'Opening PayPal...'; } catch (e) {}
+      }
+    } catch (e) {
+      popup = null;
+    }
+
+    showGlobalLoader();
+    const payload = {
+      accept_terms: true,
+      accept_privacy: true,
+      amount: Number(amount),
+      months: Number(months)
+    };
+    const resp = await fetch(`${API}/restaurants/${rid}/pay/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      // Close the popup if it was opened
+      try { if (popup && !popup.closed) popup.close(); } catch (e) {}
+      throw new Error(txt || 'Payment initiation failed');
+    }
+    const data = await resp.json();
+    if (data.approval_url) {
+      // Navigate the previously opened popup (if available) to the approval URL to avoid popup blocking.
+      try {
+        if (popup && !popup.closed) {
+          popup.location = data.approval_url;
+        } else {
+          window.open(data.approval_url, '_blank', 'noopener,noreferrer');
+        }
+      } catch (e) {
+        // fallback: open a new tab/window
+        window.open(data.approval_url, '_blank', 'noopener,noreferrer');
+      }
+      showMessage('Opened PayPal window. Complete payment to activate subscription.', 'info');
+    } else {
+      try { if (popup && !popup.closed) popup.close(); } catch (e) {}
+      throw new Error('No approval URL returned');
+    }
+  } catch (e) {
+    showMessage(`Payment failed: ${e.message || e}`, 'error');
+  } finally {
+    hideGlobalLoader();
+  }
+}
+
+/* ===== New Feature: Timeline Preview generation (frontend) =====
+   - generateTimelinePreview(): reads numShiftsPerDay and planningDaysPreview
+     and renders a visual grid of day cards with suggested shift time slots.
+   - If a restaurant is selected and you change the days ahead, prompt to update restaurant planning_days and PATCH.
+   - Save Shift Template button is created after a successful preview generation and saves one template shift per shift index.
+   - RESET Preview button (dark-themed) clears the preview and resets inputs safely before saving.
+*/
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function timeToMinutes(t) {
+  if (!t) return null;
+  const parts = t.split(':');
+  if (parts.length < 2) return null;
+  return Number(parts[0]) * 60 + Number(parts[1]);
+}
+function minutesToTime(m) {
+  if (m === null || isNaN(m)) return '';
+  m = Math.max(0, Math.min(24*60-1, Math.round(m)));
+  const hh = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${pad(hh)}:${pad(mm)}`;
+}
+
+async function updateRestaurantPlanningDaysIfNeeded(newDays) {
+  const rid = currentRestaurantId;
+  if (!rid) return;
+  const cur = Number($('planningDaysInfo')?.textContent || 0);
+  const nd = Number(newDays);
+  if (!isNaN(cur) && cur === nd) return;
+  // send PATCH to update planning_days
+  try {
+    const resp = await fetch(`${API}/restaurants/${rid}/planning_days/`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planning_days: nd })
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      showMessage(`Failed to update planning days: ${txt}`, 'error');
+      return;
+    }
+    const data = await resp.json();
+    if (data.planning_days) {
+      $('planningDaysInfo').textContent = data.planning_days;
+      showMessage('Planning horizon updated for restaurant', 'success');
+    }
+  } catch (e) {
+    showMessage(`Failed to update planning days: ${e.message}`, 'error');
+  }
+}
+
+function generateTimelinePreview() {
+  const numShifts = Number($('numShiftsPerDay')?.value || 1);
+  const days = Number($('planningDaysPreview')?.value || 7);
+  if (isNaN(numShifts) || numShifts < 1) return showMessage('Number of shifts must be at least 1', 'error');
+  if (isNaN(days) || days < 1) return showMessage('Days ahead must be at least 1', 'error');
+
+  // If a restaurant is selected AND days differ from current planningDays, prompt the user before updating.
+  const rid = currentRestaurantId;
+  let proceedWithRender = true;
+  if (rid) {
+    const curText = $('planningDaysInfo')?.textContent || '';
+    const currentDays = parseInt(curText, 10);
+    if (!isNaN(currentDays) && currentDays !== days) {
+      const confirmMsg = `Current planning horizon for this restaurant: ${currentDays} days\nWould you like to change it to ${days} days?\n\n(This will update the restaurant settings on the server)`;
+      const ok = window.confirm(confirmMsg);
+      if (ok) {
+        // send PATCH and wait for result before rendering
+        try {
+          showGlobalLoader();
+          fetch(`${API}/restaurants/${rid}/planning_days/`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ planning_days: days })
+          }).then(async (resp) => {
+            if (!resp.ok) {
+              const txt = await resp.text();
+              showMessage(`Failed to update planning horizon: ${txt}`, 'error');
+            } else {
+              const data = await resp.json();
+              if (data.planning_days) {
+                $('planningDaysInfo').textContent = data.planning_days;
+                showMessage(`Planning horizon updated to ${days} days`, 'success');
+              } else {
+                showMessage('Planning horizon updated', 'success');
+              }
+            }
+          }).catch(err => {
+            showMessage(`Failed to update planning horizon: ${err.message}`, 'error');
+          }).finally(() => {
+            hideGlobalLoader();
+          });
+        } catch (e) {
+          hideGlobalLoader();
+          showMessage(`Failed to update planning horizon: ${e.message}`, 'error');
+        }
+      } else {
+        showMessage('Preview generated without updating planning horizon', 'info');
+      }
+    }
+  }
+
+  // Render the preview (always)
+  const container = $('timelinePreview');
+  if (!container) return showMessage('No container', 'error');
+  container.innerHTML = '';
+
+  // Default day coverage: 08:00 - 22:00 (14 hours) to split into shifts by default
+  const defaultStart = 8 * 60;
+  const defaultEnd = 22 * 60;
+  const totalMinutes = defaultEnd - defaultStart;
+  const shiftDuration = Math.floor(totalMinutes / numShifts);
+
+  for (let d = 0; d < days; d++) {
+    const card = document.createElement('div');
+    card.className = 'schedule-card';
+    const header = document.createElement('div');
+    header.style.fontWeight = '700';
+    header.textContent = `Day ${d+1}`;
+    card.appendChild(header);
+
+    const shiftsContainer = document.createElement('div');
+    shiftsContainer.style.marginTop = '8px';
+    for (let s = 0; s < numShifts; s++) {
+      // compute default times
+      const sStart = defaultStart + s * shiftDuration;
+      const sEnd = (s === numShifts - 1) ? defaultEnd : (sStart + shiftDuration);
+      const startStr = minutesToTime(sStart);
+      const endStr = minutesToTime(sEnd);
+
+      const shiftRow = document.createElement('div');
+      shiftRow.style.display = 'flex';
+      shiftRow.style.flexDirection = 'column';
+      shiftRow.style.gap = '6px';
+      shiftRow.style.marginBottom = '8px';
+
+      const label = document.createElement('div');
+      label.style.fontWeight = '600';
+      label.textContent = `Shift ${s+1}`;
+      shiftRow.appendChild(label);
+
+      const inputs = document.createElement('div');
+      inputs.style.display = 'flex';
+      inputs.style.gap = '8px';
+      inputs.style.alignItems = 'center';
+
+      const startInp = document.createElement('input');
+      startInp.type = 'time';
+      startInp.value = startStr;
+      startInp.style.width = '120px';
+      startInp.setAttribute('aria-label', `Day ${d+1} Shift ${s+1} start time`);
+      // tag inputs with shift/day indices for later collection
+      startInp.dataset.shiftIndex = String(s);
+      startInp.dataset.day = String(d);
+      startInp.dataset.field = 'start';
+
+      const dash = document.createElement('div');
+      dash.textContent = '–';
+      dash.style.fontWeight = '700';
+
+      const endInp = document.createElement('input');
+      endInp.type = 'time';
+      endInp.value = endStr;
+      endInp.style.width = '120px';
+      endInp.setAttribute('aria-label', `Day ${d+1} Shift ${s+1} end time`);
+      endInp.dataset.shiftIndex = String(s);
+      endInp.dataset.day = String(d);
+      endInp.dataset.field = 'end';
+
+      inputs.appendChild(startInp);
+      inputs.appendChild(dash);
+      inputs.appendChild(endInp);
+
+      shiftRow.appendChild(inputs);
+      shiftsContainer.appendChild(shiftRow);
+    }
+
+    card.appendChild(shiftsContainer);
+    container.appendChild(card);
+  }
+
+  // After rendering preview, add Save Shift Template button at bottom of timelinePreview (only once).
+  addSaveShiftTemplateButton();
+}
+
+/* Save Shift Template logic:
+   - Collect start/end times for each shift index across days (prefer first non-empty pair)
+   - For each shift index, POST to /restaurants/{rid}/shifts/ with name "Shift ${index+1}" and start_time/end_time
+   - Use current selected restaurant as restaurant_id
+*/
+function addSaveShiftTemplateButton() {
+  const container = $('timelinePreview');
+  if (!container) return;
+  // remove existing button if present to avoid duplicates
+  const existing = container.querySelector('#saveShiftTemplateBtn');
+  if (existing) existing.remove();
+
+  const btn = document.createElement('button');
+  btn.id = 'saveShiftTemplateBtn';
+  btn.className = 'btn-primary';
+  btn.textContent = 'Save Shift Template';
+  btn.style.marginTop = '12px';
+  btn.addEventListener('click', saveShiftTemplate);
+  // append at bottom
+  container.appendChild(btn);
+}
+
+async function saveShiftTemplate() {
+  const rid = currentRestaurantId || $('restaurantSelect')?.value;
+  if (!rid) return showMessage('Select restaurant first', 'error');
+
+  const numShifts = Number($('numShiftsPerDay')?.value || 1);
+  if (isNaN(numShifts) || numShifts < 1) return showMessage('Invalid shifts per day', 'error');
+
+  const container = $('timelinePreview');
+  if (!container) return showMessage('No preview available', 'error');
+
+  // Collect inputs grouped by shiftIndex
+  const inputs = container.querySelectorAll('input[type="time"][data-shift-index]');
+  const shiftMap = {}; // shiftIndex -> array of {start, end, day}
+  inputs.forEach(inp => {
+    const idx = inp.dataset.shiftIndex;
+    const day = inp.dataset.day;
+    const field = inp.dataset.field;
+    if (!shiftMap[idx]) shiftMap[idx] = {};
+    if (!shiftMap[idx][day]) shiftMap[idx][day] = { start: '', end: '' };
+    shiftMap[idx][day][field] = inp.value || '';
+  });
+
+  // For each shift index choose the first pair where at least one value is present; prefer non-empty both values
+  const templates = [];
+  for (let i = 0; i < numShifts; i++) {
+    const arrObj = shiftMap[String(i)] || {};
+    const daysArr = Object.keys(arrObj).map(k => ({ day: Number(k), ...arrObj[k] }));
+    let chosen = null;
+    // prefer both non-empty
+    for (const it of daysArr) {
+      if (it.start && it.end) { chosen = it; break; }
+    }
+    if (!chosen) {
+      // fallback: first entry
+      if (daysArr.length > 0) chosen = daysArr[0];
+    }
+    // final fallback: empty values
+    if (!chosen) chosen = { start: '', end: '' };
+    templates.push({ shiftIndex: i, start_time: chosen.start || null, end_time: chosen.end || null });
+  }
+
+  // POST each template shift to API
+  let createdCount = 0;
+  try {
+    showGlobalLoader();
+    for (const t of templates) {
+      const name = `Shift ${t.shiftIndex + 1}`;
+      const payload = { name, start_time: t.start_time, end_time: t.end_time };
+      try {
+        const resp = await fetch(`${API}/restaurants/${rid}/shifts/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!resp.ok) {
+          const txt = await resp.text();
+          throw new Error(txt || `Failed to create shift ${name}`);
+        }
+        createdCount++;
+      } catch (err) {
+        // stop on first error and report
+        throw new Error(err.message || `Failed to create shift ${name}`);
+      }
+    }
+    showMessage(`Shift template saved (${createdCount} shifts created/updated)`, 'success');
+    // refresh shifts list / controls
+    refreshShiftsList();
+    populateShiftDependentControls();
+  } catch (e) {
+    showMessage(`Failed to save shifts: ${e.message}`, 'error');
+  } finally {
+    hideGlobalLoader();
+  }
+}
+
+/* ===== RESET Preview (dark button) implementation =====
+   - resetTimelinePreview(): clears the timelinePreview DOM, removes Save button, resets inputs to defaults
+   - non-destructive: only client-side changes until user saves via Save Shift Template button
+*/
+function resetTimelinePreview() {
+  try {
+    const ok = confirm('Are you sure you want to reset the timeline preview? This will clear any unsaved time inputs for the preview (this does not affect saved shifts).');
+    if (!ok) {
+      showMessage('Preview reset cancelled', 'info');
+      return;
+    }
+    const container = $('timelinePreview');
+    if (!container) return showMessage('No preview to reset', 'error');
+    // clear the preview content
+    container.innerHTML = '';
+    // remove Save button if any
+    const saveBtn = $('saveShiftTemplateBtn');
+    if (saveBtn) saveBtn.remove();
+    // reset input controls to defaults
+    const numShiftsInput = $('numShiftsPerDay');
+    const planningDaysPreviewInput = $('planningDaysPreview');
+    if (numShiftsInput) numShiftsInput.value = '2';
+    if (planningDaysPreviewInput) planningDaysPreviewInput.value = '7';
+    showMessage('Timeline preview reset', 'success');
+  } catch (e) {
+    showMessage(`Failed to reset preview: ${e.message}`, 'error');
+  }
+}
+
+/* ===== Initialization wiring ===== */
+document.addEventListener('DOMContentLoaded', () => {
+  // font controls
+  const range = $('fontRange');
+  if (range) {
+    range.addEventListener('input', e => setBaseFontSize(e.target.value));
+    range.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); decreaseFont(); }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); increaseFont(); }
+    });
+  }
+  if ($('fontInc')) $('fontInc').addEventListener('click', increaseFont);
+  if ($('fontDec')) $('fontDec').addEventListener('click', decreaseFont);
+  loadFontSize();
+
+  // init nav
+  initNav();
+
+  // safe tour start button
+  const startBtn = $('startTourBtn');
+  if (startBtn) {
+    // Use touchstart and click to improve responsiveness on mobile browsers (iOS/Android)
+    const handler = (e) => { e.preventDefault(); try { startTour(); } catch (err) {} };
+    startBtn.addEventListener('click', handler);
+    startBtn.addEventListener('touchstart', handler, {passive:false});
+  }
+
+  // initial data load
+  loadRestaurants().then(() => {
+    const saved = localStorage.getItem(SELECTED_KEY);
+    if (saved && $('restaurantSelect') && $('restaurantSelect').querySelector(`option[value="${saved}"]`)) {
+      $('restaurantSelect').value = saved;
+      onRestaurantChange();
+    } else {
+      populateShiftDependentControls();
+      refreshEmployeesList();
+      refreshShiftsList();
+    }
+  });
+
+  // download select wiring
+  if ($('downloadRestaurantSelect')) $('downloadRestaurantSelect').addEventListener('change', refreshDownloadRestaurants);
+
+  // pay buttons enable state wiring
+  const t = $('acceptTerms'), p = $('acceptPrivacy');
+  if (t && p) {
+    const fn = () => {
+      const rid = $('restaurantSelect')?.value;
+      const enabled = t.checked && p.checked && !!rid;
+      ['payBtn','payBtn2','payBtn3'].forEach(id => {
+        const btn = $(id);
+        if (!btn) return;
+        btn.disabled = !enabled;
+        btn.setAttribute('aria-disabled', String(!enabled));
+      });
+    };
+    t.addEventListener('change', fn);
+    p.addEventListener('change', fn);
+    $('restaurantSelect')?.addEventListener('change', fn);
+  }
+});
+</script>
+</body>
+</html>

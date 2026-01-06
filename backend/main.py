@@ -2,6 +2,7 @@
 import os
 import sqlite3
 import json
+import logging
 from datetime import datetime, date, timedelta
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,8 +15,19 @@ import math
 import statistics
 import io
 import csv
+from dotenv import load_dotenv
 
-DB_FILE = "shift_backend.db"
+# Load environment variables from .env file if it exists
+load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+DB_FILE = os.getenv("DATABASE_FILE", "shift_backend.db")
 SHIFT_HOURS = 8
 MAX_HOURS_PER_WEEK = 40
 
@@ -140,6 +152,13 @@ def init_db():
 
 init_db()
 
+# Log application startup
+logger.info("=" * 60)
+logger.info("Shift Scheduler Backend starting")
+logger.info(f"Database file: {DB_FILE}")
+logger.info(f"Database file exists: {os.path.exists(DB_FILE)}")
+logger.info("=" * 60)
+
 # ================= MODELS =================
 class RestaurantCreate(BaseModel):
     name: str
@@ -235,6 +254,26 @@ def ensure_subscription_active(restaurant_id: int):
         raise HTTPException(status_code=403, detail="Subscription required")
 
 # ================= REST API (unchanged endpoints preserved) =================
+@app.get("/health")
+def health_check():
+    """
+    Health check endpoint that verifies database connectivity.
+    Returns JSON with status and database availability.
+    """
+    db_ok = False
+    try:
+        # Try to connect to the database and execute a simple query
+        with db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+        db_ok = True
+    except Exception as e:
+        logger.error(f"Health check failed - database error: {e}")
+        return {"status": "error", "db": False}
+    
+    return {"status": "ok", "db": db_ok}
+
 @app.post("/restaurants/")
 def create_restaurant(r: RestaurantCreate):
     with db() as c:
@@ -1170,7 +1209,7 @@ def ai_suggest_schedule(restaurant_id: int, max_suggestions: Optional[int] = 100
     """, (restaurant_id,)).fetchall()
     avail_map = defaultdict(list)
     for ar in avail_rows:
-        avail_map[(ar["day"], ar["shift_id"])].append(ar["employee_id")]
+        avail_map[(ar["day"], ar["shift_id"])].append(ar["employee_id"])
 
     # compute simple "workload" per employee (how many availability entries they have)
     emp_avail_count = defaultdict(int)
@@ -1186,7 +1225,7 @@ def ai_suggest_schedule(restaurant_id: int, max_suggestions: Optional[int] = 100
         if not shifts_for_day:
             # fallback to load table shifts
             shifts_for_day = []
-            load_rows = c.execute("SELECT shift_id, required FROM load WHERE restaurant_id=? AND day=", (restaurant_id, d)).fetchall()
+            load_rows = c.execute("SELECT shift_id, required FROM load WHERE restaurant_id=? AND day=?", (restaurant_id, d)).fetchall()
             for lr in load_rows:
                 shifts_for_day.append({"day": d, "shift_id": lr["shift_id"], "recommended": lr["required"]})
 
@@ -1194,4 +1233,22 @@ def ai_suggest_schedule(restaurant_id: int, max_suggestions: Optional[int] = 100
             sid = p["shift_id"]
             rec = rec_map.get((d, sid), p.get("recommended", 1))
             available = list(avail_map.get((d, sid), []))
-            // ... (file continues; full original content will be saved)
+            # Sort available by workload (least busy first) to balance assignments
+            available_sorted = sorted(available, key=lambda e: emp_avail_count.get(e, 0))
+            
+            # Suggest up to 'rec' employees
+            for i, emp_id in enumerate(available_sorted):
+                if suggestion_count >= (max_suggestions or 100):
+                    break
+                if i >= rec:
+                    break
+                suggestions.append({
+                    "day": d,
+                    "shift_id": sid,
+                    "employee_id": emp_id,
+                    "reason": f"AI forecast recommends {rec} staff; employee available and least loaded"
+                })
+                suggestion_count += 1
+    
+    return {"restaurant_id": restaurant_id, "suggestions": suggestions[:max_suggestions or 100]}
+

@@ -5,9 +5,11 @@ __pycache__/
 
 # Virtualenvs
 venv/
+.venv
 .env
 .env.local
 .env.*.local
+backend/.env
 
 # Database
 *.db
